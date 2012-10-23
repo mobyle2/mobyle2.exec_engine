@@ -1,3 +1,14 @@
+#! /bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Created on Aug 13, 2012
+
+@author: Bertrand Néron
+@contact: bneron@pasteur.fr
+@organization: Institut Pasteur
+@license: GPLv3
+"""
 
 import os 
 import sys

@@ -1,4 +1,4 @@
 mobyle2.exec_engine
 ===================
 
-the execution egine part of mobyle2 project
+the execution engine part of mobyle2 project

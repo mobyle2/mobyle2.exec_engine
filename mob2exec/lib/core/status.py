@@ -39,12 +39,13 @@ class Status(object):
     
     def __init__(self , code , message = ''):
         """
-        @param code: the code of the status 
-        @type code: integer 
-        @param string: the code of the status representing by a string
-        @type string: string
-        @param message: the message associated to the status
-        @type message: string
+        :param code: the code of the status 
+        :type code: integer 
+        :param string: the code of the status representing by a string
+        :type string: string
+        :param message: the message associated to the status
+        :type message: string
+        
         """
         self.code = code
 
@@ -60,12 +61,21 @@ class Status(object):
             
         
     def __eq__(self , other):
+        """two Status instance are equals if there code and message are equals
+       
+        """
         return self.code == other.code and self.message == other.message
     
     def __ne__(self , other ):
+        """two Status instance are not equals if they are different code or message
+       
+        """
         return self.code != other.code or self.message != other.message
     
     def __str__(self):
+        """sring representaion of a Status instance
+       
+        """
         if self.code == Status.UNKNOWN :
             s = "unknown"
         elif self.code == Status.BUILDING:
@@ -88,33 +98,55 @@ class Status(object):
 
     
     def is_ended(self):
-        """
-         4 : "finished"  , # the job is finished without error from Mobyle
-         5 : "error"     , # the job has failed due to a MobyleError 
-         6 : "killed"    , # the job has been removed by the user, or killed by the admin
+        """:returns: True if the status is among the following ones :
+        * 4 : "finished", the job is finished without error from Mobyle
+        * 5 : "error", the job has failed due to a MobyleError 
+        * 6 : "killed", the job has been removed by the user, or killed by the admin
+        
+        :rtype: boolean
+        
         """
         return self.code in ( self.FINISHED, self.ERROR, self.KILLED )
 
     def is_on_error(self):
         """
-         5 : "error"     , # the job has failed due to a MobyleError 
-         6 : "killed"    , # the job has been removed by the user, or killed by the admin
+        
+        :returns: True if the status is among the following ones :
+        * 5 : "error", the job has failed due to a MobyleError 
+        * 6 : "killed", the job has been removed by the user, or killed by the admin
+        
+        :rtype: boolean
+        
         """
         return self.code in ( self.ERROR, self.KILLED )
         
     def is_queryable(self):
         """
-        1 : "submitted" , # the job.run method has been called
-        2 : "pending"   , # the job has been submitted to the batch manager but wait for a slot 
-        3 : "running"   , # the job is running in the batch manager
-        7 : "hold"      , # the job is hold by the batch manager
+        :returns: True if the status is among the following ones :
+        * 1 : "submitted", the job.run method has been called
+        * 2 : "pending", the job has been submitted to the batch manager but wait for a slot 
+        * 3 : "running", the job is running in the batch manager
+        * 7 : "hold", the job is hold by the batch manager
+        
+        :rtype: boolean
+        
         """
         return self.code in( self.SUBMITTED, self.PENDING, self.RUNNING, self.HOLD )
     
     def is_known(self):
+        """if the system know the status of the job
+        
+        :rtype: boolean
+        
+        """
         return self.code != self.UNKNOWN
     
     def is_submittable(self):
+        """:returns: True if the job is ready to be submitted to a batch system :
+        
+        :rtype: boolean
+        
+        """
         return self.code == self.BUILDING
     
     

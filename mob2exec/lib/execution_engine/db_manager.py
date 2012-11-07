@@ -21,19 +21,20 @@ from lib.core.status import Status
 
          
 class DBManager(multiprocessing.Process):
-    """
-    synchronize the data base with the job in the system
-     - get new entry in database and put the corresponding job in the JobsTable
-     - update the status of running job from the system in the database
-     - remove the completed jobs from the jobsTable
+    """synchronize the data base with the job in the system
+     * get new entry in database and put the corresponding job in the JobsTable
+     * update the status of running job from the system in the database
+     * remove the completed jobs from the jobsTable
+    
     """
     
     def __init__(self, jobs_table, master_q):
         """
-        @param jobs_table: the container shared by all containing all L{JobRef} alive in the system
-        @type jobs_table: L{JobsTable} instance 
-        @param master_q: a communication queue to listen comunication emit by the L{Master} instance
-        @type master_q: L{multiprocessing.Queue} instance
+        :param jobs_table: the container shared by all containing all L{JobRef} alive in the system
+        :type jobs_table: L{JobsTable} instance 
+        :param master_q: a communication queue to listen comunication emit by the L{Master} instance
+        :type master_q: L{multiprocessing.Queue} instance
+        
         """
         super( DBManager, self).__init__()
         self.master_q = master_q
@@ -76,13 +77,13 @@ class DBManager(multiprocessing.Process):
             self.update_jobs(conn , jobs_to_update)       
             
     def update_jobs(self , conn , jobs_to_update ):
-        """
-        synchronize the db with the jobs from the jobs_table
+        """synchronize the db with the jobs from the jobs_table
         and remove completed jobs from the jobs table
-        @param conn: a connection to the database
-        @type conn:
-        @param jobs_to_update: the jobs to update
-        @type jobs_to_update: list of L{JobRef} 
+        
+        :param conn: a connection to the database
+        :type conn:
+        :param jobs_to_update: the jobs to update
+        :type jobs_to_update: list of L{JobRef} 
         """
         for job in jobs_to_update:
             #mise a jour de tous les jobs 
@@ -104,10 +105,10 @@ class DBManager(multiprocessing.Process):
                 pass
 
     def get_new_jobs(self , conn ):
-        """
-        get the new job entries in the db and fill the jobs_table with the correspondin job
-        @param conn: a connection to the database
-        @type conn:
+        """get the new job entries in the db and fill the jobs_table with the corresponding job
+        
+        :param conn: a connection to the database
+        :type conn:
         """
         ## Bouchon simulant une requette a la DB pour recuperer les nouveau job a soumettre ##
         global job_cpt

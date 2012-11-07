@@ -48,8 +48,8 @@ class Master(object):
    
     def __init__(self , pid_file ):
         """
-        @param pid_file: the file wher is store the pid of the daemon
-        @type pid_file: L{lockfile.pidlockfile.PIDLockFile} instance
+        :param pid_file: the file wher is store the pid of the daemon
+        :type pid_file: L{lockfile.pidlockfile.PIDLockFile} instance
         """
         self.pid_file = pid_file
         self.log_receiver = None

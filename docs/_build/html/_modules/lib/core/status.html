@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lib.core.status &mdash; mobyle2.exec_engine 0.1a documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1a',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="mobyle2.exec_engine 0.1a documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">mobyle2.exec_engine 0.1a documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for lib.core.status</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Aug 14, 2012</span>
+
+<span class="sd">@author: Bertrand Néron</span>
+<span class="sd">@contact: bneron@pasteur.fr</span>
+<span class="sd">@organization: Institut Pasteur</span>
+<span class="sd">@license: GPLv3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.mobyle_error</span> <span class="kn">import</span> <span class="n">MobyleError</span>
+
+<div class="viewcode-block" id="Status"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status">[docs]</a><span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;reflect the different steps of a job life&quot;&quot;&quot;</span>
+    
+    <span class="sd">&quot;&quot;&quot;the system is not able to determine the status of the job&quot;&quot;&quot;</span>
+    <span class="n">UNKNOWN</span>   <span class="o">=</span> <span class="mi">0</span>
+    <span class="sd">&quot;&quot;&quot;the environment of the job is building (working directory creation, building command line, ...)&quot;&quot;&quot;</span>
+    <span class="n">BUILDING</span>  <span class="o">=</span> <span class="mi">10</span>
+    <span class="sd">&quot;&quot;&quot;the job has been submitted to the execution system to be running&quot;&quot;&quot;</span>
+    <span class="n">SUBMITTED</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="sd">&quot;&quot;&quot;the job is pending in the execution system note that some system cannot pend a job (SYS)&quot;&quot;&quot;</span> 
+    <span class="n">PENDING</span>   <span class="o">=</span> <span class="mi">30</span>
+    <span class="sd">&quot;&quot;&quot;the job is running&quot;&quot;&quot;</span>
+    <span class="n">RUNNING</span>   <span class="o">=</span> <span class="mi">40</span>
+    <span class="sd">&quot;&quot;&quot;the job is completed without error&quot;&quot;&quot;</span>
+    <span class="n">FINISHED</span>  <span class="o">=</span> <span class="mi">50</span>
+    <span class="sd">&quot;&quot;&quot;un error occurred the job is stopped&quot;&quot;&quot;</span>
+    <span class="n">ERROR</span>     <span class="o">=</span> <span class="mi">60</span>
+    <span class="sd">&quot;&quot;&quot;the job was stopped by an administrator or the user&quot;&quot;&quot;</span>
+    <span class="n">KILLED</span>    <span class="o">=</span> <span class="mi">70</span>
+    <span class="sd">&quot;&quot;&quot;the job is hold by the execution system&quot;&quot;&quot;</span>
+    <span class="n">HOLD</span>      <span class="o">=</span> <span class="mi">80</span>
+
+    
+    
+<div class="viewcode-block" id="Status.__init__"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span> <span class="p">,</span> <span class="n">code</span> <span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param code: the code of the status </span>
+<span class="sd">        :type code: integer </span>
+<span class="sd">        :param string: the code of the status representing by a string</span>
+<span class="sd">        :type string: string</span>
+<span class="sd">        :param message: the message associated to the status</span>
+<span class="sd">        :type message: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+
+        <span class="k">if</span> <span class="n">message</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">str</span><span class="p">(</span> <span class="n">message</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="c">#s_log.error( &quot;Status received an non valid message: %s : %s&quot;%( message, err ) , exc_info = True )</span>
+                <span class="k">raise</span> <span class="n">MobyleError</span> <span class="p">,</span> <span class="n">err</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            
+        </div>
+<div class="viewcode-block" id="Status.__eq__"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.__eq__">[docs]</a>    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span> <span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        two Status instance are equals if there code and message are equals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">message</span>
+    </div>
+<div class="viewcode-block" id="Status.__ne__"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.__ne__">[docs]</a>    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span> <span class="p">,</span> <span class="n">other</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        two Status instance are not equals if they are different code or message</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">code</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">message</span>
+    </div>
+<div class="viewcode-block" id="Status.__str__"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sring representaion of a Status instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">UNKNOWN</span> <span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;unknown&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">BUILDING</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;building&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;submitted&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">PENDING</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;pending&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;running&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;finished&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">ERROR</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;error&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">KILLED</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">=</span> <span class="s">&quot;killed&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">Status</span><span class="o">.</span><span class="n">HOLD</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;hold&quot;</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+    </div>
+<div class="viewcode-block" id="Status.is_ended"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.is_ended">[docs]</a>    <span class="k">def</span> <span class="nf">is_ended</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns: True if the status is among the following ones :</span>
+<span class="sd">        * 4 : &quot;finished&quot;, the job is finished without error from Mobyle</span>
+<span class="sd">        * 5 : &quot;error&quot;   , the job has failed due to a MobyleError </span>
+<span class="sd">        * 6 : &quot;killed&quot;  , the job has been removed by the user, or killed by the admin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">FINISHED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">KILLED</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Status.is_on_error"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.is_on_error">[docs]</a>    <span class="k">def</span> <span class="nf">is_on_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :returns: True if the status is among the following ones :</span>
+<span class="sd">        * 5 : &quot;error&quot;     , # the job has failed due to a MobyleError </span>
+<span class="sd">        * 6 : &quot;killed&quot;    , # the job has been removed by the user, or killed by the admin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">KILLED</span> <span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Status.is_queryable"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.is_queryable">[docs]</a>    <span class="k">def</span> <span class="nf">is_queryable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1 : &quot;submitted&quot; , # the job.run method has been called</span>
+<span class="sd">        2 : &quot;pending&quot;   , # the job has been submitted to the batch manager but wait for a slot </span>
+<span class="sd">        3 : &quot;running&quot;   , # the job is running in the batch manager</span>
+<span class="sd">        7 : &quot;hold&quot;      , # the job is hold by the batch manager</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="ow">in</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">SUBMITTED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">HOLD</span> <span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Status.is_known"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.is_known">[docs]</a>    <span class="k">def</span> <span class="nf">is_known</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UNKNOWN</span>
+    </div>
+<div class="viewcode-block" id="Status.is_submittable"><a class="viewcode-back" href="../../../index.html#lib.core.status.Status.is_submittable">[docs]</a>    <span class="k">def</span> <span class="nf">is_submittable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">BUILDING</span>
+    
+    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">mobyle2.exec_engine 0.1a documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Bertrand Néron.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,186 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lib.core.jobref &mdash; mobyle2.exec_engine 0.1a documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1a',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="mobyle2.exec_engine 0.1a documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">mobyle2.exec_engine 0.1a documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for lib.core.jobref</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Aug 13, 2012</span>
+
+<span class="sd">@author: Bertrand Néron</span>
+<span class="sd">@contact: bneron@pasteur.fr</span>
+<span class="sd">@organization: Institut Pasteur</span>
+<span class="sd">@license: GPLv3</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+
+<div class="viewcode-block" id="AbstractJobRef"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef">[docs]</a><span class="k">class</span> <span class="nc">AbstractJobRef</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    AbstractJobRef is an abstract class that describes the common interface of JobRef and WorkflowRef</span>
+<span class="sd">    &quot;&quot;&quot;</span>     
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
+
+<div class="viewcode-block" id="AbstractJobRef.__init__"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span> <span class="p">,</span> <span class="n">create_time</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">owner</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param id: the identifier of this jobRef</span>
+<span class="sd">        :type id: string</span>
+<span class="sd">        :param creat_time: the time of job creation</span>
+<span class="sd">        :type create_time: time.struct_time</span>
+<span class="sd">        :param status: the status of this jobRef</span>
+<span class="sd">        :type status: L{status} instance</span>
+<span class="sd">        :param owner: &quot;owner&quot; id of the job: either a workflow (local|remote) or a userspace (local|remote)</span>
+<span class="sd">        :type owner: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="nb">id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_owner</span> <span class="o">=</span> <span class="n">owner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_time</span> <span class="o">=</span> <span class="n">create_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        </div>
+<div class="viewcode-block" id="AbstractJobRef.__cmp__"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.__cmp__">[docs]</a>    <span class="k">def</span> <span class="nf">__cmp__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">cmp</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span> <span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">create_time</span> <span class="p">)</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AbstractJobRef.id"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.id">[docs]</a>    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @return: the unique identifier of this job.</span>
+<span class="sd">        @rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AbstractJobRef.owner"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.owner">[docs]</a>    <span class="k">def</span> <span class="nf">owner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @return: the owner of a job. It can be a user space or a workflow</span>
+<span class="sd">        @rtype: ??? </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owner</span>
+    </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="AbstractJobRef.create_time"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.create_time">[docs]</a>    <span class="k">def</span> <span class="nf">create_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @return: the time of job creation</span>
+<span class="sd">        @rtype: time from epoch??, time struct ??</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_time</span>
+</div>
+    <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="AbstractJobRef.must_be_notified"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.AbstractJobRef.must_be_notified">[docs]</a>    <span class="k">def</span> <span class="nf">must_be_notified</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @return: True if a notification must be send a the end of job. False otherwise </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    </div></div>
+<div class="viewcode-block" id="JobRef"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.JobRef">[docs]</a><span class="k">class</span> <span class="nc">JobRef</span><span class="p">(</span><span class="n">AbstractJobRef</span><span class="p">):</span>
+    
+<div class="viewcode-block" id="JobRef.__init__"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.JobRef.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span> <span class="p">,</span> <span class="n">create_time</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">owner</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        @param id: the identifier of this jobRef</span>
+<span class="sd">        @type id: string</span>
+<span class="sd">        @param create_time: the time of job creation</span>
+<span class="sd">        @type create_time: time.struct_time</span>
+<span class="sd">        @param status: the status of this jobRef</span>
+<span class="sd">        @type status: L{status} instance</span>
+<span class="sd">        @param owner: &quot;owner&quot; id of the job: either a workflow( local |remote) or a userspace(local|remote)</span>
+<span class="sd">        @type owner: </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">JobRef</span> <span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="nb">id</span><span class="p">,</span> <span class="n">create_time</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">owner</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_been_notified</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="JobRef.must_be_notified"><a class="viewcode-back" href="../../../index.html#lib.core.jobref.JobRef.must_be_notified">[docs]</a>    <span class="k">def</span> <span class="nf">must_be_notified</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">delay</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="k">return</span> <span class="bp">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_time</span> <span class="o">&gt;</span> <span class="n">delay</span> <span class="k">else</span> <span class="bp">False</span> 
+        
+        
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">mobyle2.exec_engine 0.1a documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Bertrand Néron.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

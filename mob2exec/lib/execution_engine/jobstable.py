@@ -37,10 +37,10 @@ class JobsTable(object):
         return iter( jobs )
     
     def put(self, job_ref ):
-        """
-        add a JobRef instance in table
-        @param job_ref: the JobRef instance to add in the table
-        @type job_ref: L{JobRef} instance
+        """add a JobRef instance in table
+        
+        :param job_ref: the JobRef instance to add in the table
+        :type job_ref: L{JobRef} instance
         """
         with self._lock:
             self.jobs_table[ job_ref.id ] = job_ref

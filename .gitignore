@@ -20,4 +20,7 @@
 ##########################
 *\.pyc
 *\.pyo
-
+build/
+dist/
+docs/_build/
+mob2exec/mobyle/common

@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 
+#===============================================================================
+# Created on Aug 13, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
+
 import logging
 import logging.config
 from conf.logger import client_log_config
@@ -19,10 +28,10 @@ class JtMonitor(multiprocessing.Process):
     """
     def __init__(self, jobs_table, master_q):
         """
-        @param jobs_table: the container shared by all containing all L{JobRef} alive in the system
-        @type jobs_table: L{JobsTable} instance 
-        @param master_q: a communication queue to listen comunication emit by the L{Master} instance
-        @type master_q: L{multiprocessing.Queue} instance
+        :param jobs_table: the container shared by all containing all JobRef alive in the system
+        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :param master_q: a communication queue to listen comunication emit by the :class:`bin.mob2execd.Master` instance
+        :type master_q: `multiprocessing.Queue` instance
         """
         super( JtMonitor , self).__init__()
         self.master_q = master_q

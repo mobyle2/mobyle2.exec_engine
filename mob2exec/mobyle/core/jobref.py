@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-'''
-Created on Aug 13, 2012
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
+#===============================================================================
+#   Created on Aug 13, 2012           
+#                                     
+# @author: Bertrand Néron              
+# @contact: bneron@pasteur.fr          
+# @organization: Institut Pasteur      
+# @license: GPLv3                      
+#===============================================================================
 
 import logging
 _log = logging.getLogger(__name__)
@@ -20,15 +21,14 @@ class AbstractJobRef(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, id , create_time, status, owner ):
-        """:mod:`status` toto
-        :class:`~status.Status` truc
-        
+        """
+
         :param id: the identifier of this jobRef
         :type id: string
         :param create_time: the time of job creation
         :type create_time: time.struct_time
         :param status: the status of this jobRef
-        :type status: Status instance
+        :type status:  :class:`lib.core.status.Status` object.
         :param owner: owner id of the job: either a workflow (local|remote) or a userspace (local|remote)
         :type owner: string
         
@@ -41,7 +41,7 @@ class AbstractJobRef(object):
     def __cmp__(self, other):
         """
         :param other: a JobRef I want to comared with self
-        :type other: an AbstractJobRef instance
+        :type other: an :class:`lib.core.jobref.AbstractJobRef` object.
         :returns: negative int if the other object was created before this one, positive integer if other is newer, or 0 if they are created at the same time.
         :rtype: Integer 
         
@@ -93,7 +93,7 @@ class JobRef(AbstractJobRef):
         :param create_time: the time of job creation
         :type create_time: time.struct_time
         :param status: the status of this jobRef
-        :type status: L{status} instance
+        :type status: :class:`lib.core.status.Status` object.
         :param owner: "owner" id of the job: either a workflow( local or remote) or a userspace(local or remote)
         :type owner: ???
         

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Aug 14, 2012
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-"""
+#===============================================================================
+# Created on Aug 14, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
 import logging
 _log = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class Status(object):
     def __init__(self , code , message = ''):
         """
         :param code: the code of the status 
-        :type code: integer 
+        :type code: int 
         :param string: the code of the status representing by a string
         :type string: string
         :param message: the message associated to the status
@@ -98,11 +99,13 @@ class Status(object):
 
     
     def is_ended(self):
-        """:returns: True if the status is among the following ones :
-        * 4 : "finished", the job is finished without error from Mobyle
-        * 5 : "error", the job has failed due to a MobyleError 
-        * 6 : "killed", the job has been removed by the user, or killed by the admin
-        
+        """
+        :returns: True if the status is among the following ones :
+         
+          * 4 : "finished", the job is finished without error from Mobyle
+          * 5 : "error", the job has failed due to a MobyleError 
+          * 6 : "killed", the job has been removed by the user, or killed by the admin
+
         :rtype: boolean
         
         """
@@ -110,11 +113,11 @@ class Status(object):
 
     def is_on_error(self):
         """
-        
         :returns: True if the status is among the following ones :
-        * 5 : "error", the job has failed due to a MobyleError 
-        * 6 : "killed", the job has been removed by the user, or killed by the admin
         
+          * 5 : "error", the job has failed due to a MobyleError 
+          * 6 : "killed", the job has been removed by the user, or killed by the admin
+
         :rtype: boolean
         
         """
@@ -123,10 +126,11 @@ class Status(object):
     def is_queryable(self):
         """
         :returns: True if the status is among the following ones :
-        * 1 : "submitted", the job.run method has been called
-        * 2 : "pending", the job has been submitted to the batch manager but wait for a slot 
-        * 3 : "running", the job is running in the batch manager
-        * 7 : "hold", the job is hold by the batch manager
+        
+          * 1 : "submitted", the job.run method has been called
+          * 2 : "pending", the job has been submitted to the batch manager but wait for a slot 
+          * 3 : "running", the job is running in the batch manager
+          * 7 : "hold", the job is hold by the batch manager
         
         :rtype: boolean
         

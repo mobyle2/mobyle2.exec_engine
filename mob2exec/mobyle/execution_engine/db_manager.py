@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on Aug 13, 2012
+#===============================================================================
+# Created on Aug 13, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
 import logging
 import logging.config
 from conf.logger import client_log_config
@@ -30,10 +31,10 @@ class DBManager(multiprocessing.Process):
     
     def __init__(self, jobs_table, master_q):
         """
-        :param jobs_table: the container shared by all containing all L{JobRef} alive in the system
-        :type jobs_table: L{JobsTable} instance 
-        :param master_q: a communication queue to listen comunication emit by the L{Master} instance
-        :type master_q: L{multiprocessing.Queue} instance
+        :param jobs_table: the container shared by all execution_engine members and containing all :class:`lib.core.jobref.AbstractJobRef` object alive in the system
+        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :param master_q: a communication queue to listen comunication emit by the :class:`bin.mobexecd.Master` instance
+        :type master_q: :class:`multiprocessing.Queue` instance
         
         """
         super( DBManager, self).__init__()
@@ -83,7 +84,7 @@ class DBManager(multiprocessing.Process):
         :param conn: a connection to the database
         :type conn:
         :param jobs_to_update: the jobs to update
-        :type jobs_to_update: list of L{JobRef} 
+        :type jobs_to_update: list of :class:`lib.core.jobref.JobRef` instance. 
         """
         for job in jobs_to_update:
             #mise a jour de tous les jobs 

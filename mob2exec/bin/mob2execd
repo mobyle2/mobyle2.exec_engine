@@ -1,27 +1,26 @@
 #! /bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Created on Aug 13, 2012
-
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-"""
+#===============================================================================
+# Created on Aug 13, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
 import os
 import sys
 
-MOBYLEHOME = None
-if os.environ.has_key('MOBYLEHOME'):
-    MOBYLEHOME = os.environ['MOBYLEHOME']
-if not MOBYLEHOME:
-    sys.exit('MOBYLEHOME must be defined in your environment')
- 
-if ( os.path.join( MOBYLEHOME, 'mob2exec' ) ) not in sys.path:
-    sys.path.append( os.path.join( MOBYLEHOME, 'mob2exec') )
-
+try:
+    import mobyle.execution_engine
+except ImportError:
+    if os.environ.has_key('MOBYLEHOME'):
+        MOBYLEHOME = os.environ['MOBYLEHOME']
+        sys.path.append( os.path.join( MOBYLEHOME, 'mobyle') )
+    else:
+        raise ImportError("mobyle.execution_engine must be in PYTHONPATH or MOBYLEHOME must be defined in environment")
 
 #import logging
 import logging.config
@@ -32,10 +31,10 @@ import threading
 import time
 import setproctitle
 
-from lib.core.logger import LogRecordSocketReceiver
-from lib.execution_engine.jobstable import JobsTable    
-from lib.execution_engine.monitor import JtMonitor
-from lib.execution_engine.db_manager import DBManager
+from mobyle.core.logger import LogRecordSocketReceiver
+from mobyle.execution_engine.jobstable import JobsTable    
+from mobyle.execution_engine.monitor import JtMonitor
+from mobyle.execution_engine.db_manager import DBManager
 
 
 class Master(object):
@@ -49,7 +48,7 @@ class Master(object):
     def __init__(self , pid_file ):
         """
         :param pid_file: the file wher is store the pid of the daemon
-        :type pid_file: L{lockfile.pidlockfile.PIDLockFile} instance
+        :type pid_file: `lockfile.pidlockfile.PIDLockFile` instance
         """
         self.pid_file = pid_file
         self.log_receiver = None

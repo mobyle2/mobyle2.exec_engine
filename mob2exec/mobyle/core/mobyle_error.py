@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-'''
-Created on Aug 14, 2012
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
+#===============================================================================
+# Created on Aug 14, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
 
 class MobyleError(Exception):

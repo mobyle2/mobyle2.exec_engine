@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-'''
-Created on Aug 13, 2012
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
+#===============================================================================
+# Created on Aug 13, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron <at> pasteur <dot> fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
 import logging
 import logging.config
@@ -23,10 +24,10 @@ class NotificationActor(multiprocessing.Process):
     
     def __init__(self, table, job_id ):
         """
-        @param jobs_table: the container shared by all containing all L{JobRef} alive in the system
-        @type jobs_table: L{JobsTable} instance 
-        @param job_id: the id of the job to treat
-        @type job_id: string
+        :param jobs_table: the container shared by all containing all :class:`lib.execution_engine.jobref.JobRef` alive in the system
+        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :param job_id: the id of the job to treat
+        :type job_id: string
         """
         super(NotificationActor, self).__init__()
         self._log = None

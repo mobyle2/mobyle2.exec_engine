@@ -1,1 +1,2 @@
-__all__ = [ 'core', 'execution_engine', 'execution_system']
+__import__('pkg_resources').declare_namespace(__name__)
+

@@ -1,3 +1,5 @@
+__import__('pkg_resources').declare_namespace('mobyle')
+
 __all__ = [ 'jobstable' , 
            'db_manager' , 
            'jt_monitor' ,

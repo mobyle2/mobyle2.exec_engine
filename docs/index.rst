@@ -10,50 +10,18 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-
-.. automodule:: lib.core.jobref
-   :members:
-   :private-members:
-   :special-members:
    
-.. automodule:: lib.core.status
-   :members: Status
-   :private-members:
-   :special-members:
+   master
    
-.. automodule:: lib.core.mobyle_error
-   :members:
-   :private-members:
-   :special-members:
-
-.. automodule:: lib.execution_engine.db_manager
-   :members:
-   :private-members:
-   :special-members:
-
-.. automodule:: lib.execution_engine.jobstable
-   :members:
-   :private-members:
-   :special-members:
-
-.. automodule:: lib.execution_engine.monitor
-   :members:
-   :private-members:
-   :special-members:
-
-.. automodule:: lib.execution_engine.notification_actor
-   :members:
-   :private-members:
-   :special-members:
-.. automodule:: lib.execution_engine.status_actor
-   :members:
-   :private-members:
-   :special-members:
-.. automodule:: lib.execution_engine.submit_actor
-   :members:
-   :private-members:
-   :special-members:
-
+   jobref
+   status
+   mobyle_error
+   db_manager
+   jobstable
+   monitor
+   notification_actor
+   status_actor
+   submit_actor
 
 
 Indices and tables

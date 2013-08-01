@@ -17,8 +17,11 @@ import multiprocessing
 import time
 import setproctitle
  
-from lib.core.jobref import JobRef
-from lib.core.status import Status
+from mobyle.common.connection import connection
+from mobyle.common.job import ClJob, Status
+
+#from lib.core.jobref import JobRef
+#from lib.core.status import Status
 
          
 class DBManager(multiprocessing.Process):
@@ -111,31 +114,13 @@ class DBManager(multiprocessing.Process):
         :param conn: a connection to the database
         :type conn:
         """
-        ## Bouchon simulant une requette a la DB pour recuperer les nouveau job a soumettre ##
-        global job_cpt
-        max_job = 500
-        entries = []
-        if job_cpt == max_job:
-            return entries
-        for id_ in range(job_cpt , min(job_cpt + 10 , max_job) ):
-            job_cpt = id_
-            try:
-                job = conn[ id_ ]        
-            except KeyError:
-                continue
-            entries.append( job )
-            job_cpt += 1                            
+        entries = connection.ClJob.find({'status': Status.TO_BE_SUBMITTED})
         self._log.debug( "%s new entries = %s"%(self._name, [ en['id'] for en in entries ] ) )           
-        ## fin bouchon ##
         
+        #check if a job is already in jobs_table 
         active_jobs_id = [ j.id for j in self.jobs_table.jobs() ]
         self._log.debug( "%s active_jobs_id = %s (%d)"%(self._name, active_jobs_id, len( active_jobs_id )) )
-        new_jobs = []
-        for entry in entries:
-            job_id = entry['id'] 
-            if job_id not in active_jobs_id:
-                job = JobRef( entry['id'], entry['create_time'] , Status( Status.BUILDING ), entry['owner'] )
-                new_jobs.append( job )
+        new_jobs = [ j in entries if j.id not in active_jobs_id ]
         self._log.debug( "%s new_jobs = %s"%(self._name, [ j.id for j in new_jobs ]))
         return new_jobs
 
@@ -154,54 +139,54 @@ class DBManager(multiprocessing.Process):
 #############################################
 
 
-import cPickle 
-import os.path  
-class DBConnection(object):
-    
-    def __init__(self , cnx_params = None):
-        self.cnx_params = { 'path' : '/tmp/mob2.db' }
-        self.cnx = None
-    
-    
-    def open(self):
-        if not os.path.exists( self.cnx_params['path']) or os.path.getsize(self.cnx_params['path']) == 0:
-            f = open( self.cnx_params['path'] , 'w')
-            self.cnx = {}
-            cPickle.dump( self.cnx , f )
-            f.close()
-        f = open( self.cnx_params['path'])
-        self.cnx = cPickle.load( f )
-        f.close()
-        return self.cnx
-    
-    def close(self):
-        self.cnx = None
-    
-    def commit(self):
-        f = open( self.cnx_params['path'] , 'w')
-        cPickle.dump( self.cnx , f )
-        f.close()
-        self.cnx = None
-        
-    def rollback(self):
-        self.close()
-    
-    
-    def __enter__(self):
-        #gerer la connnection a la base de donnée
-        d = self.open()
-        return d
-    
-    def __exit__(self, exctype, exc, tb):
-        """
-        """
-        if tb is None: #no traceback means no error
-            self.commit()
-            success = True
-        else:
-            self.rollback()
-            success = False
-        return success
-
-
-job_cpt = 0
+#import cPickle 
+#import os.path  
+#class DBConnection(object):
+#    
+#    def __init__(self , cnx_params = None):
+#        self.cnx_params = { 'path' : '/tmp/mob2.db' }
+#        self.cnx = None
+#    
+#    
+#    def open(self):
+#        if not os.path.exists( self.cnx_params['path']) or os.path.getsize(self.cnx_params['path']) == 0:
+#            f = open( self.cnx_params['path'] , 'w')
+#            self.cnx = {}
+#            cPickle.dump( self.cnx , f )
+#            f.close()
+#        f = open( self.cnx_params['path'])
+#        self.cnx = cPickle.load( f )
+#        f.close()
+#        return self.cnx
+#    
+#    def close(self):
+#        self.cnx = None
+#    
+#    def commit(self):
+#        f = open( self.cnx_params['path'] , 'w')
+#        cPickle.dump( self.cnx , f )
+#        f.close()
+#        self.cnx = None
+#        
+#    def rollback(self):
+#        self.close()
+#    
+#    
+#    def __enter__(self):
+#        #gerer la connnection a la base de donnée
+#        d = self.open()
+#        return d
+#    
+#    def __exit__(self, exctype, exc, tb):
+#        """
+#        """
+#        if tb is None: #no traceback means no error
+#            self.commit()
+#            success = True
+#        else:
+#            self.rollback()
+#            success = False
+#        return success
+#
+#
+#job_cpt = 0

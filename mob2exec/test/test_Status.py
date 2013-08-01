@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on Aug 27, 2012
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
-import os
-import sys
+#===============================================================================
+# Created on Aug 27, 2012
+# 
+# @author: Bertrand Néron
+# @contact: bneron@pasteur.fr
+# @organization: Institut Pasteur
+# @license: GPLv3
+#===============================================================================
 
-MOBYLE_HOME = os.path.abspath( os.path.join( os.path.dirname( __file__ ) , "../" ) )
-os.environ[ 'MOBYLE_HOME' ] = MOBYLE_HOME
-if ( MOBYLE_HOME ) not in sys.path:
-    sys.path.append( MOBYLE_HOME )
-    
+import os.path
 import unittest
 import inspect
 import types
 
-from lib.core.status import Status
+#a config object must be instantiated first for each entry point of the application
+from mobyle.common.config import Config
+config = Config( os.path.join( os.path.dirname(__file__), 'test.conf'))
+from mobyle.common.job import Status
 
 
 class StatusTest(unittest.TestCase):
 
     def setUp(self):
+        #tuple (attribute , value)
         self.all_status_tuple = [ m  for m in inspect.getmembers( Status ) if type(m[1]) == types.IntType ]
         self.all_status = [ Status(t[1]) for t in self.all_status_tuple]
         self.status_labels =  [ l[0] for l in self.all_status_tuple ] 

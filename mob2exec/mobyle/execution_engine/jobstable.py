@@ -37,22 +37,21 @@ class JobsTable(object):
         jobs = self.jobs()    
         return iter( jobs )
     
-    def put(self, job_ref ):
-        """add a JobRef instance in table
+    def put(self, job):
+        """add a Job instance in table
         
-        :param job_ref: the JobRef instance to add in the table
-        :type job_ref: :class:`lib.core.jobref.JobRef` instance
-        
+        :param job: the Job instance to add in the table
+        :type job: :class:`mobyle.common.job` instance
         """
         with self._lock:
-            self.jobs_table[ job_ref.id ] = job_ref
+            self.jobs_table[ job.id ] = job
     
-    def get(self, job_id ):
+    def get(self, job_id):
         """
         :param job_id: the id of a jobRef
         :type job_id: string
-        :return: the jobRef corresponding to the jobid without remove it from the table.
-        :rtype: :class:`lib.core.jobref.JobRef` instance
+        :return: the job corresponding to the jobid without remove it from the table.
+        :rtype: :class:`mobyle.common.job` instance
         
         """
         with self._lock:
@@ -61,21 +60,21 @@ class JobsTable(object):
     
     def jobs(self):
         """
-        :return: the list of jobRef contained in the table, sort by the increasing jobRef timestamp
-        :rtype: list of :class:`lib.core.jobref.JobRef` instances
+        :return: the list of job contained in the table, sort by the increasing job.create_time
+        :rtype: list of :class:`mobyle.common.job` instances
         
         """
         with self._lock:
-            job_refs = self.jobs_table.values()
-            job_refs.sort()
-        return job_refs
+            jobs = self.jobs_table.values()
+            jobs.sort()
+        return jobs
     
-    def pop(self, job_id ):
+    def pop(self, job_id):
         """
-        :param job_id: the id of a JobRef instance
+        :param job_id: the id of a Job instance
         :type job_id: string
-        :return: and remove the JobRef instance corresponding to job_id from the table.
-        :rtype: :class:`lib.core.jobref.JobRef` instance
+        :return: and remove the Job instance corresponding to job_id from the table.
+        :rtype: :class:`mobyle.common.job` instance
         
         """
         with self._lock:

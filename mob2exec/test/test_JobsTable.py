@@ -67,6 +67,4 @@ class JobsTableTest(unittest.TestCase):
             jt.put(j)
         jobs_recieved = jt.jobs()  
         self.assertEqual(jobs_send, jobs_recieved)
-        for j in  jobs_recieved:
-            j.save()
         

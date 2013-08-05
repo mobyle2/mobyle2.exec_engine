@@ -86,7 +86,7 @@ class Master(object):
         self.mon_q = multiprocessing.Queue()
         self.mon = JtMonitor(self.jt , self.mon_q)
         self.db_q = multiprocessing.Queue()
-        self.db_mgr = DBManager( self.jt, self.db_q )
+        self.db_mgr = DBManager(self.jt, self.db_q)
         self.mon.start()
         self.db_mgr.start()
         

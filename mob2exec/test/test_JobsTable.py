@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 
-'''
-Created on Aug 27, 2012
+#==============================================
+#Created on Aug 27, 2012
+#
+#@author: Bertrand Néron
+#@contact: bneron@pasteur.fr
+#@organization: Institut Pasteur
+#@license: GPLv3
+#==============================================
 
-@author: Bertrand Néron
-@contact: bneron@pasteur.fr
-@organization: Institut Pasteur
-@license: GPLv3
-'''
 import os
-import sys
-
-MOBYLE_HOME = os.path.abspath( os.path.join( os.path.dirname( __file__ ) , "../" ) )
-os.environ[ 'MOBYLE_HOME' ] = MOBYLE_HOME
-if ( MOBYLE_HOME ) not in sys.path:
-    sys.path.append( MOBYLE_HOME )
-    
 import unittest
 import time
 
@@ -72,6 +66,7 @@ class JobsTableTest(unittest.TestCase):
         for j in jobs_send:
             jt.put(j)
         jobs_recieved = jt.jobs()  
-        self.assertEqual( jobs_send, jobs_recieved)
-         
+        self.assertEqual(jobs_send, jobs_recieved)
+        for j in  jobs_recieved:
+            j.save()
         

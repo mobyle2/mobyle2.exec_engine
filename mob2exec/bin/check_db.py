@@ -21,14 +21,15 @@ if not MOBYLEHOME:
 if ( os.path.join( MOBYLEHOME, 'mob2exec' ) ) not in sys.path:
     sys.path.append(  os.path.join( MOBYLEHOME, 'mob2exec' )  )
 
-import cPickle
-from  conf.config import SANDBOX
+from mobyle.common.config import Config
+config = Config( os.path.abspath('../tests/test.conf'))
+from mobyle.common.connection import connection
 
-with open(os.path.join( SANDBOX , 'mob2.db')) as f:
-    db = cPickle.load(f)
+from mobyle.common.job import Status
+from mobyle.common.job import ClJob
 
-job_ids = db.keys()
-job_ids.sort()
-for job_id in job_ids:      
-    print job_id , "...", db[ job_id ]
 
+all_jobs = connection.ClJob.find({})
+#all_jobs.sort()
+for job in all_jobs:
+    print "%s : %s : %s : %s : %s" % (job.id, job.name, job.status, job.create_time, job.end_time ) 

@@ -17,6 +17,7 @@ import multiprocessing
 import time
 import setproctitle
 
+from .build_actor import BuildActor
 from .submit_actor import SubmitActor
 from .status_actor import StatusActor
 from .notification_actor import NotificationActor
@@ -63,7 +64,12 @@ class JtMonitor(multiprocessing.Process):
                 self.stop()
                 break
             for job in all_jobs:
-                if job.status.is_submittable() :
+                if job.status.is_buildable():
+                    actor = BuildActor( self.table, job.id  )
+                    self._log.debug( "%s start a new BuildActor = %s"%(self._name, actor.name) )
+                    actor.start()
+                    self._child_process.append( actor)
+                elif job.status.is_submittable() :
                     actor = SubmitActor( self.table, job.id  )
                     self._log.debug( "%s start a new SubmitActor = %s"%(self._name, actor.name) )
                     actor.start()

@@ -18,8 +18,8 @@ import multiprocessing
 import time
 import setproctitle
 
-from mobyle.common.config import Config
-config = Config( os.path.join( os.path.dirname(__file__), 'test.conf'))
+#from mobyle.common.config import Config
+#config = Config( os.path.join( os.path.dirname(__file__), 'test.conf'))
 from mobyle.common.connection import connection
 from mobyle.common.job import Job, ClJob, Status
 
@@ -70,8 +70,8 @@ class DBManager(multiprocessing.Process):
                 #then the jobsTable is down too
                 break
             self.update_jobs(jobs_to_update)
-            new_jobs = self.get_new_jobs()
-            for job in new_jobs:
+            active_jobs = self.get_active_jobs()
+            for job in active_jobs:
                 self.jobs_table.put(job)
             time.sleep(2)
      
@@ -104,12 +104,16 @@ class DBManager(multiprocessing.Process):
             else:
                 pass
 
-    def get_new_jobs(self):
+    def get_active_jobs(self):
         """
-        :returns: the new job entries in the db and fill the jobs_table with the corresponding job
+        :returns: the all the jobs that should handle by the exec_engine
         :rtype: list of :mod:`mobyle.common.job`
         """
-        entries = connection.Job.find({'status': Status.TO_BE_SUBMITTED})
+        #entries is a cursor (a kind of generator, NOT a list
+        #I assume that we will not have too many jobs at one time
+        #check if it's always the case even after the exec_egine is stopped for a while and restart
+        #while the portal continue to accept new jobs 
+        entries = list(connection.ClJob.find({'status': { '$in' : Status.active_states() }}))
         self._log.debug("%s new entries = %s"%(self.name, [en.id for en in entries]))           
         
         #check if a job is already in jobs_table 

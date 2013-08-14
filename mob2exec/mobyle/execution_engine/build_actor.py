@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #===============================================================================
-# Created on Aug 13, 2012
+# Created on Aug 13, 2013
 # 
 # @author: Bertrand Néron
 # @contact: bneron <at> pasteur <dot> fr
@@ -18,7 +18,7 @@ import setproctitle
 
 from mobyle.common.job import Status       
 
-class SubmitActor(multiprocessing.Process):
+class BuildActor(multiprocessing.Process):
     """
     submit job to the execution system.
     """
@@ -32,21 +32,26 @@ class SubmitActor(multiprocessing.Process):
         :type job_id: string
         
         """
-        super(SubmitActor, self).__init__()
+        super(BuildActor, self).__init__()
         self._log = None
         self.table = table  
         self.job_id = job_id
            
     def run(self):
-        self._name = "SubmitActor-%d" % self.pid
-        setproctitle.setproctitle('mob2_submit')
+        self._name = "BuildActor-%d" % self.pid
+        setproctitle.setproctitle('mob2_build')
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
         job = self.table.pop(self.job_id )
-        job.status.state = Status.SUBMITTED  
+        job.status.state = Status.TO_BE_SUBMITTED  
         self._log.info( "%s put job %s with status %s in table" % ( self._name , job.id , job.status ) )
-        acc_log = logging.getLogger( 'access')
-        acc_log.info( "test access log %s" % self._name)
+        #the acces log must record 
+        # the submited jobs to mobyle 
+        #  or
+        # the submitted job to execution?
+        #
+        #acc_log = logging.getLogger( 'access')
+        #acc_log.info( "test access log %s" % self._name)
         self.table.put( job )
         
         

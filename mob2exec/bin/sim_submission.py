@@ -23,9 +23,17 @@ if ( os.path.join( MOBYLEHOME , 'mob2exec' ) ) not in sys.path:
 
 import time
 import random
+import argparse
+parser = argparse.ArgumentParser(description="simulate submission from a user")
+parser.add_argument("-c", "--config",
+                    action = 'store',
+                    dest = 'cfg_file',
+                    default = None,
+                    help = "the path to a mobyle2 configuration file")
+args = parser.parse_args()
 
 from mobyle.common.config import Config
-config = Config( os.path.abspath('../tests/test.conf'))
+config = Config( os.path.abspath(args.cfg_file))
 from mobyle.common.connection import connection
 
 from mobyle.common.job import Status
@@ -59,13 +67,13 @@ MTYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE""")]
 def put_new_job_in_db(name, cmd_line):
     job = connection.ClJob()
     job.name = name
-    job.status = Status(Status.TO_BE_SUBMITTED)
+    job.status = Status(Status.BUILDING)
     job.owner = "me"
     job.cmd_line = cmd_line
     job.save()
 
 def clean_db():
-    old_jobs = connection.ClJob.find({})
+    old_jobs = connection.Job.find({})
     for obj in old_jobs:
         obj.delete()
 

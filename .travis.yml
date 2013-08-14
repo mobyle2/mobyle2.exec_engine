@@ -7,6 +7,8 @@ branches:
   except:
     - /^feature.*$/
 # command to install dependencies
-install: "pip install -r requirements.txt --use-mirrors"
+install: 
+- "pip install mongokit"
+- "pip install -r requirements.txt --use-mirrors"
 # command to run tests
 script: cd mob2exec && nosetests

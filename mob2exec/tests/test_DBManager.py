@@ -104,27 +104,29 @@ class DBManagerTest(unittest.TestCase):
                 
             
             
-    def test_get_new_jobs(self):
+    def test_get_active_jobs(self):
         jobs_send = []
         for i in range(0,10):
             job = connection.ClJob()
             job.name = "job_%d" % i
             job.owner = "me"
-            if i%2 :
-                job.status = Status(Status.TO_BE_SUBMITTED)
-            else:
-                job.status = Status(choice((Status.INIT, Status.BUILDING, Status.RUNNING, Status.FINISHED, Status.ERROR)))
+            job.status = Status(choice((Status.INIT, 
+                                        Status.BUILDING, 
+                                        Status.TO_BE_SUBMITTED,
+                                        Status.PENDING, 
+                                        Status.RUNNING, 
+                                        Status.FINISHED, 
+                                        Status.ERROR)))
             job.save()
             jobs_send.append(job)
             time.sleep(1)
-        new_jobs_send = [j for j in jobs_send if j.status == Status.TO_BE_SUBMITTED]
+        active_jobs_send = [j for j in jobs_send if j.status.is_active()]
         jt = JobsTable()
         db_q = multiprocessing.Queue()
         mgr = DBManager(jt, db_q)
         mgr._log = logging.getLogger()
-        new_jobs = mgr.get_new_jobs()
-        self.assertEqual(new_jobs_send, new_jobs)
-        new_jobs_send.sort()
-        new_jobs.sort()
-        self.assertEqual(new_jobs_send, new_jobs)
+        active_jobs = mgr.get_active_jobs()
+        active_jobs_send.sort()
+        active_jobs.sort()
+        self.assertEqual(active_jobs_send, active_jobs)
         

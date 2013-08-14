@@ -18,11 +18,10 @@ try:
 except ImportError:
     if os.environ.has_key('MOBYLEHOME'):
         MOBYLEHOME = os.environ['MOBYLEHOME']
-        sys.path.append( os.path.join( MOBYLEHOME, 'mobyle') )
+        sys.path.append( os.path.join( MOBYLEHOME, 'mob2exec') )
     else:
         raise ImportError("mobyle.execution_engine must be in PYTHONPATH or MOBYLEHOME must be defined in environment")
 
-#import logging
 import logging.config
 from conf.logger import server_log_config
 
@@ -31,23 +30,19 @@ import threading
 import time
 import setproctitle
 
-from mobyle.core.logger import LogRecordSocketReceiver
-from mobyle.execution_engine.jobstable import JobsTable    
-from mobyle.execution_engine.monitor import JtMonitor
-from mobyle.execution_engine.db_manager import DBManager
-
 
 class Master(object):
-    """
-    The master is a daemon that start the JtMonitor and the DBManager process. 
-    It also keeps all these processes running. If a child process dies, another one is restarted automatically.
-    It start a tcp server in a separate thread which is in charge to recieved log emit by child processes and 
-    write them on log files.
-    """
-   
+    
+    """The master is a daemon that start the JtMonitor and the DBManager process. 
+It also keeps all these processes running. If a child process dies, another one is restarted automatically.
+It start a tcp server in a separate thread which is in charge to recieved log emit by child processes and 
+write them on log files.
+"""
+    
+
     def __init__(self , pid_file ):
         """
-        :param pid_file: the file wher is store the pid of the daemon
+        :param pid_file: the file where is store the pid of the daemon
         :type pid_file: `lockfile.pidlockfile.PIDLockFile` instance
         """
         self.pid_file = pid_file
@@ -73,9 +68,15 @@ class Master(object):
         self._name = "Master-%d"% os.getpid()
         
         logging.config.dictConfig(server_log_config)
+        
+        from mobyle.core.logger import LogRecordSocketReceiver
+        from mobyle.execution_engine.jobstable import JobsTable    
+        from mobyle.execution_engine.monitor import JtMonitor
+        from mobyle.execution_engine.db_manager import DBManager
+       
         try:
             self.log_receiver = LogRecordSocketReceiver()
-        except Exception ,err:
+        except Exception, err:
             msg = str(err) +" : the port used by logger is already in use. Check if an other mob2exec is not already running"
             sys.exit(msg)
         self.log_server_thread = threading.Thread(target=self.log_receiver.serve_forever)   
@@ -125,23 +126,34 @@ class Master(object):
         cmd = 'RELOAD'
         self.mon_q.put(cmd)
         self.db_q.put( cmd )
-                  
-           
-      
+            
+            
 if __name__ == '__main__':
+    import argparse
     import signal
     import lockfile.pidlockfile
     import daemon
-    
-    usage = """usage:
-    mob2execd {start|stop|reload} """
-    from  conf.config import SANDBOX
-    lock_file = os.path.join( SANDOX, 'mob2.pid' )  
-    
-    if len( sys.argv) != 2:
-        print >> sys.stderr , usage
-        sys.exit(1)
-    
+
+    parser = argparse.ArgumentParser(description="mob2exec is the execution engine of mobyle2")
+    parser.add_argument("cmd",
+                        choices = ['start', 'stop', 'reload'],
+                        default = None,
+                        help = """
+start : start the daemon,                                       
+stop : to stop the daemon,
+reload : to reload he configuration file without stopping the daemon (not implemented)
+"""
+                    )
+    parser.add_argument("-c", "--config",
+                        action = 'store',
+                        dest = 'cfg_file',
+                        default = None,
+                        help = "the path to a mobyle2 configuration file")
+    args = parser.parse_args()
+
+    from mobyle.common.config import Config
+    cfg = Config( os.path.abspath(args.cfg_file)).config()
+
     def mob2_pid(lock_file):
         pid = None
         if os.path.exists( lock_file ):
@@ -158,9 +170,15 @@ if __name__ == '__main__':
             os.kill(pid, signum )
         except OSError , err:
             print >> sys.stderr , "%s (pid= %d) not responding: %s" % (sys.argv[0], pid , err)    
-             
-    cmd = sys.argv[1]
-    if cmd == 'start':
+           
+    
+    lock_file = cfg.get("mob2exec","pid_file")     
+    #####################
+    #                   #
+    # start the daemon  #
+    #                   #
+    #####################         
+    if args.cmd == 'start':
         pid = mob2_pid( lock_file )
         if pid:
             print >> sys.stderr,"%s is already running abort this one (pid=%d)" % (lock_file, pid)
@@ -172,8 +190,8 @@ if __name__ == '__main__':
         
         master = Master( pid_file )
         ############################# DEBUG #################################
-        stdout = open(os.path.join( SANDOX, 'mob2.stdout'), 'a')
-        stderr = open(os.path.join( SANDOX,'/tmp/mob2.stderr'), 'a')
+        stdout = open(os.path.join(os.path.dirname(lock_file), 'mob2.stdout'), 'a')
+        stderr = open(os.path.join(os.path.dirname(lock_file) ,'mob2.stderr'), 'a')
         print "creation du context"
         context = daemon.DaemonContext( pidfile= pid_file, stdout= stdout, stderr= stderr )
         #context = daemon.DaemonContext( pidfile= pid_file )
@@ -189,21 +207,31 @@ if __name__ == '__main__':
             master.start()
         print "main EXITING"
         
-    elif cmd == 'stop':
+    #####################
+    #                   #
+    #  stop the daemon  #
+    #                   #
+    #####################         
+    elif args.cmd == 'stop':
         pid = mob2_pid( lock_file )
         if pid:
             communicate( pid , signal.SIGTERM )
         else:
             print >> sys.stderr , "%s is not running " % sys.argv[0]
             sys.exit(3)
-    elif cmd == 'reload':
+    
+    ######################
+    #                    #
+    # reload the config  #
+    #                    #
+    ######################         
+    elif args.cmd == 'reload':
         pid = mob2_pid( lock_file )
         if pid:
             communicate( pid, signal.SIGHUP )
         else:
             sys.exit(3)
     else:
-        print >> sys.stderr , usage
-        sys.exit(1)
+        assert True , parser.print_usage()
 
-    
+        

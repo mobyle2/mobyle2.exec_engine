@@ -4,7 +4,7 @@
 execution_engine.status_actor
 *****************************
 
-.. automodule:: lib.execution_engine.status_actor
+.. automodule:: execution_engine.status_actor
    :members:
    :private-members:
    :special-members:

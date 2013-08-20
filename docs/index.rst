@@ -11,17 +11,17 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
-   master
-   
-   jobref
-   status
    mobyle_error
+   master
    db_manager
    jobstable
    monitor
-   notification_actor
-   status_actor
+   build_actor
    submit_actor
+   status_actor
+   notification_actor
+   
+   
 
 
 Indices and tables

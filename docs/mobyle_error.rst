@@ -4,7 +4,7 @@
 core.mobyle_error
 *****************
 
-.. automodule:: lib.core.mobyle_error
+.. automodule:: core.mobyle_error
    :members:
    :private-members:
    :special-members:

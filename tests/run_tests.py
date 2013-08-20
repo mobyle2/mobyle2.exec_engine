@@ -25,7 +25,15 @@ if (MOBYLE_HOME) not in sys.path:
 
 
 def run(tests, verbosity = 0):
-
+    """
+    run the unit tests and print the results on stderr
+    
+    :param tests: the name of test to run. if tests is empty list, discover recursively tests form this directory.
+                  a test is python module with the test_*.py pattern
+    :type tests: list of string
+    :param verbosity: the verbosity of the output
+    :type verbosity: int
+    """
     if not tests:
         suite = unittest.TestLoader().discover(os.path.dirname(__file__), pattern="test_*.py" ) 
     else:

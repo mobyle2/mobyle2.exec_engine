@@ -12,4 +12,4 @@ install:
 - "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
 - "pip install -r requirements.txt --use-mirrors"
 # command to run tests
-script: cd mob2exec && nosetests
+script: nosetests

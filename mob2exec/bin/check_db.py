@@ -13,10 +13,10 @@ import os
 import sys
 
 MOBYLEHOME = None
-if os.environ.has_key('MOBYLEHOME'):
-    MOBYLEHOME = os.environ['MOBYLEHOME']
+if os.environ.has_key('MOBYLE_HOME'):
+    MOBYLEHOME = os.environ['MOBYLE_HOME']
 if not MOBYLEHOME:
-    sys.exit('MOBYLEHOME must be defined in your environment')
+    sys.exit('MOBYLE_HOME must be defined in your environment')
  
 if ( os.path.join( MOBYLEHOME, 'mob2exec' ) ) not in sys.path:
     sys.path.append(  os.path.join( MOBYLEHOME, 'mob2exec' )  )

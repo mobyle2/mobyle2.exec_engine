@@ -21,9 +21,12 @@ from mobyle.common.config import Config
 config = Config( os.path.join( os.path.dirname(__file__), 'test.conf'))
 from mobyle.common.connection import connection
 
-from mobyle.execution_engine.jobstable import JobsTable
+from mobyle.common.users import User
+from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ClJob
+
+from mobyle.execution_engine.jobstable import JobsTable
 from mobyle.execution_engine.db_manager import DBManager
 
 class DBManagerTest(unittest.TestCase):
@@ -33,15 +36,32 @@ class DBManagerTest(unittest.TestCase):
         for obj in objects:
             obj.delete()
        
+        self.user = connection.User()
+        self.user['email'] = 'foo@bar.fr'
+        self.user.save()
+        
+        self.project = connection.Project()
+        self.project['owner'] = self.user['_id']
+        self.project['name'] = 'MyProject'
+        self.project.save()
+        
+        
     def tearDown(self):
-        objects = connection.ClJob.find({})
+        objects = connection.Job.find({})
         for obj in objects:
             obj.delete()
+        objects = connection.User.find({})
+        for obj in objects:
+            obj.delete()
+        objects = connection.Project.find({})
+        for obj in objects:
+            obj.delete()        
            
     def test_stop(self):
         jobs= []
         for i in range(0,10):
             job = connection.ClJob()
+            job.project = self.project.id
             job.name = "job_%d" % i
             job.owner = "me"
             job.status = Status(Status.RUNNING)
@@ -70,6 +90,7 @@ class DBManagerTest(unittest.TestCase):
         jobs_to_update= []
         for i in range(0,10):
             job = connection.ClJob()
+            job.project = self.project.id
             job.name = "job_%d" % i
             job.owner = "me"
             job.status = Status(Status.RUNNING)
@@ -77,6 +98,7 @@ class DBManagerTest(unittest.TestCase):
             jobs_to_update.append(job)
         
         job_to_keep = connection.ClJob()
+        job_to_keep.project = self.project.id
         job_to_keep.name = "job_%d" % i
         job_to_keep.owner = "me"
         job_to_keep.status = Status(Status.RUNNING)
@@ -108,6 +130,7 @@ class DBManagerTest(unittest.TestCase):
         jobs_send = []
         for i in range(0,10):
             job = connection.ClJob()
+            job.project = self.project.id
             job.name = "job_%d" % i
             job.owner = "me"
             job.status = Status(choice((Status.INIT, 

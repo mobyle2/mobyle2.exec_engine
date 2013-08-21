@@ -18,8 +18,8 @@ if os.environ.has_key('MOBYLE_HOME'):
 if not MOBYLEHOME:
     sys.exit('MOBYLE_HOME must be defined in your environment')
  
-if ( os.path.join( MOBYLEHOME, 'mob2exec' ) ) not in sys.path:
-    sys.path.append(  os.path.join( MOBYLEHOME, 'mob2exec' )  )
+if (os.path.join( MOBYLEHOME, 'mob2exec')) not in sys.path:
+    sys.path.insert(0, os.path.join( MOBYLEHOME, 'mob2exec'))
 
 import argparse
 parser = argparse.ArgumentParser(description="check jobs in mobyle2 mongo DB")

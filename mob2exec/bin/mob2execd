@@ -18,7 +18,7 @@ try:
 except ImportError:
     if os.environ.has_key('MOBYLE_HOME'):
         MOBYLEHOME = os.environ['MOBYLE_HOME']
-        sys.path.append( os.path.join( MOBYLEHOME, 'mob2exec') )
+        sys.path.insert(0, os.path.join( MOBYLEHOME, 'mob2exec'))
     else:
         raise ImportError("mobyle.execution_engine must be in PYTHONPATH or MOBYLE_HOME must be defined in environment")
 

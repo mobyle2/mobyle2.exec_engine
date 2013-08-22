@@ -23,6 +23,7 @@ if (os.path.join(MOBYLEHOME , 'mob2exec')) not in sys.path:
 
 import time
 import random
+import shutil
 import argparse
 parser = argparse.ArgumentParser(description="simulate submission from a user")
 parser.add_argument("-c", "--config",
@@ -92,6 +93,11 @@ def clean_db():
     for obj in old_projects:
         obj.delete()
         
+        
+def clean_dirs():
+    projects_dir = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 'projects')
+    shutil.rmtree(projects_dir)
+    
 def create_user(name):
     user = connection.User()
     user['email'] = '{0}@pieds.nickelés.fr'.format(name)
@@ -110,7 +116,8 @@ def create_project(user, name):
 if __name__ == '__main__':
     
     clean_db()
-
+    clean_dirs()
+    
     for name in ('Filochard', 'Ribouldingue', 'Croquignol'):
         pieds_nickeles[name] = create_user(name)
     

@@ -113,7 +113,7 @@ class DBManager(multiprocessing.Process):
         #I assume that we will not have too many jobs at one time
         #check if it's always the case even after the exec_egine is stopped for a while and restart
         #while the portal continue to accept new jobs 
-        entries = list(connection.ClJob.find({'status': { '$in' : Status.active_states() }}))
+        entries = list(connection.Job.find({'status': { '$in' : Status.active_states() }}))
         self._log.debug("%s new entries = %s"%(self.name, [en.id for en in entries]))           
         
         #check if a job is already in jobs_table 

@@ -33,9 +33,11 @@ parser.add_argument("-c", "--config",
 args = parser.parse_args()
 
 from mobyle.common.config import Config
-config = Config( os.path.abspath(args.cfg_file))
+config = Config( os.path.abspath(args.cfg_file)).config()
 from mobyle.common.connection import connection
 
+from mobyle.common.users import User
+from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ClJob
 
@@ -62,13 +64,18 @@ MTYKLILNGKTLKGETTTEAVDAATAEKVNDNGVDGEWTYDDATKTFTVTE
 MTYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE""")]
             }
         }    
-    
-    
-def put_new_job_in_db(name, cmd_line):
+
+pieds_nickeles = {}
+
+projects = {}
+
+
+def put_new_job_in_db(name, cmd_line, project ):
     job = connection.ClJob()
+    job.project = project.id 
     job.name = name
     job.status = Status(Status.BUILDING)
-    job.owner = "me"
+    job.owner = {'id': project.id, 'klass': 'Project'}
     job.cmd_line = cmd_line
     job.save()
 
@@ -76,12 +83,44 @@ def clean_db():
     old_jobs = connection.Job.find({})
     for obj in old_jobs:
         obj.delete()
+    
+    old_users = connection.User.find({})
+    for obj in old_users:
+        obj.delete()
+        
+    old_projects = connection.Project.find({})
+    for obj in old_projects:
+        obj.delete()
+        
+def create_user(name):
+    user = connection.User()
+    user['email'] = '{0}@pieds.nickelés.fr'.format(name)
+    user.save()
+    return user
 
-clean_db()
-for i in range(0, 500):
-    time.sleep(random.randint(0, 5))
-    j = cmdlines[ random.randint(1,3)]
-    print( "put new job %s in db" % j['name'])
-    put_new_job_in_db( j['name'], j['cmd_line'])
+def create_project(user, name):
+    project = connection.Project()
+    project['owner'] = user['_id']
+    project['name'] = name
+    project.save()
+    project_directory = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 'projects', str(project.id))   
+    os.makedirs(project_directory, 0755) #create parent directory
+    return project
+
+if __name__ == '__main__':
+    
+    clean_db()
+
+    for name in ('Filochard', 'Ribouldingue', 'Croquignol'):
+        pieds_nickeles[name] = create_user(name)
+    
+    for name in ('organisateurs de voyage' , 'dans le cambouis' , "l'Opération congélation"):
+        projects[name] = create_project(random.choice(pieds_nickeles.values()), name)
+    
+    for i in range(0, 500):
+        time.sleep(random.randint(0, 5))
+        j = cmdlines[ random.randint(1,3)]
+        print( "put new job %s in db" % j['name'])
+        put_new_job_in_db( j['name'], j['cmd_line'], random.choice(projects.values()))
            
-print( "no more job to add in DB")
+    print( "no more job to add in DB")

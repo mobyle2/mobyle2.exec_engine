@@ -63,7 +63,7 @@ class DBManagerTest(unittest.TestCase):
             job = connection.ClJob()
             job.project = self.project.id
             job.name = "job_%d" % i
-            job.owner = "me"
+            job.owner = {'id': self.project.id, 'klass': 'Project'}
             job.status = Status(Status.RUNNING)
             job.save()
             jobs.append(job)
@@ -92,7 +92,7 @@ class DBManagerTest(unittest.TestCase):
             job = connection.ClJob()
             job.project = self.project.id
             job.name = "job_%d" % i
-            job.owner = "me"
+            job.owner = {'id': self.project.id, 'klass': 'Project'}
             job.status = Status(Status.RUNNING)
             job.save()
             jobs_to_update.append(job)
@@ -100,7 +100,7 @@ class DBManagerTest(unittest.TestCase):
         job_to_keep = connection.ClJob()
         job_to_keep.project = self.project.id
         job_to_keep.name = "job_%d" % i
-        job_to_keep.owner = "me"
+        job_to_keep.owner = {'id': self.project.id, 'klass': 'Project'}
         job_to_keep.status = Status(Status.RUNNING)
         job_to_keep.save()
                             
@@ -132,7 +132,7 @@ class DBManagerTest(unittest.TestCase):
             job = connection.ClJob()
             job.project = self.project.id
             job.name = "job_%d" % i
-            job.owner = "me"
+            job.owner = {'id': self.project.id, 'klass': 'Project'}
             job.status = Status(choice((Status.INIT, 
                                         Status.BUILDING, 
                                         Status.TO_BE_SUBMITTED,

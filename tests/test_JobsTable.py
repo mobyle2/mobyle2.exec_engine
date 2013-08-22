@@ -61,7 +61,7 @@ class JobsTableTest(unittest.TestCase):
         j1.project = self.project.id
         j1.name = "first job"
         j1.status = Status(Status.BUILDING)
-        j1.owner = "me"
+        j1.owner = {'id': self.project.id, 'klass': 'Project'}
         j1.save()
         jt.put(j1)
         self.assertEqual(len(jt.jobs()), 1)
@@ -81,7 +81,7 @@ class JobsTableTest(unittest.TestCase):
             j.project = self.project.id
             j.name = "job_%d" % i
             j.status = Status(Status.BUILDING)
-            j.owner = "me"
+            j.owner = {'id': self.project.id, 'klass': 'Project'}
             j.save()
             jobs_send.append(j)
             #the sensibilty of creation is 1sec minimum

@@ -44,8 +44,6 @@ class JobsTable(object):
         :type job: :class:`mobyle.common.job` instance
         """
         with self._lock:
-            print "JobsTable.put job = " + str(job)
-            print "JobsTable.put job.id = " + str(job.id)
             self.jobs_table[job.id] = job
     
     def get(self, job_id):

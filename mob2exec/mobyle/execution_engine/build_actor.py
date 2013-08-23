@@ -40,12 +40,16 @@ class BuildActor(multiprocessing.Process):
         self.job_id = job_id
            
     def run(self):
-        self._name = "BuildActor-{0:d}".format(self.pid)
+        self._name = "BuildActor-{0:d} job {1}".format(self.pid, self.job_id)
         setproctitle.setproctitle('mob2_build')
+        #change the status to aware the job that this job is currently building  
+        job = self.table.get(self.job_id)
+        job.status.state = Status.BUILDING
+        self.table.put(job)
+        
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
-        job = self.table.pop(self.job_id )
-        
+          
         self.make_job_environement(job)
         os.chdir(job.dir)
         
@@ -57,16 +61,18 @@ class BuildActor(multiprocessing.Process):
         #perform data conversion
         #how to decide which data must be convert?
         
-        job.status.state = Status.TO_BE_SUBMITTED  
-        self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
-        #the acces log must record 
+        # the acces log must record 
         # the submited jobs to mobyle 
         #  or
         # the submitted job to execution?
         #
         #acc_log = logging.getLogger( 'access')
-        #acc_log.info( "test access log %s" % self._name)
-        self.table.put( job )
+        #acc_log.info( "test access log {0}".format(self._name))
+        
+        #the monitor is now aware of the new status
+        job.status.state = Status.TO_BE_SUBMITTED  
+        self.table.put(job)
+        self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
     
     def make_job_environement(self, job):
@@ -76,7 +82,7 @@ class BuildActor(multiprocessing.Process):
           - fixing permission
         """
         project = job.get_project()
-        job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', job.id))
+        job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
         if os.path.exists(job_dir):
                 msg = 'cannot make job directory: {0} already exists'.format(job_dir)
                 self._log.error(msg)

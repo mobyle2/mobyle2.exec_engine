@@ -38,15 +38,25 @@ class SubmitActor(multiprocessing.Process):
         self.job_id = job_id
            
     def run(self):
-        self._name = "SubmitActor-%d" % self.pid
+        self._name = "SubmitActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_submit')
+        
+        job = self.table.get(self.job_id )
+        job.status.state = Status.SUBMITTING
+        self.table.put(job)
+        
         logging.config.dictConfig(client_log_config)
-        self._log = logging.getLogger( __name__ ) 
-        job = self.table.pop(self.job_id )
-        job.status.state = Status.SUBMITTED  
-        self._log.info( "%s put job %s with status %s in table" % ( self._name , job.id , job.status ) )
-        acc_log = logging.getLogger( 'access')
-        acc_log.info( "test access log %s" % self._name)
-        self.table.put( job )
+        self._log = logging.getLogger(__name__) 
+        ###################### 
+        
+        # here the code to submit a job
+        
+        ######################  
+        self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
+        acc_log = logging.getLogger('access')
+        acc_log.info("test access log {0}".format(self._name))
+        
+        job.status.state = Status.SUBMITTED
+        self.table.put(job)
         
         

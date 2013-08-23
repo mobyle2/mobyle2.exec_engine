@@ -42,30 +42,39 @@ class StatusActor(multiprocessing.Process):
         self.job_id = job_id
            
     def run(self):
-        self._name = "StatusActor-%d" % self.pid
+        self._name = "StatusActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_status')
+        
+        job = self.table.get(self.job_id)
+        old_status = job.status.state
+        
+        job.status.state = Status.UPDATING
+        self.table.put(job)
+        
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
-        
+        self._log.debug( "{0} set job {1} status {2} to {3}".format(self._name, 
+                                                                    self.job_id, 
+                                                                    old_status, 
+                                                                    job.status.state))
         ####################### BOUCHON ###############################
-        if random.randint(0, 1):
-            job = self.table.pop(self.job_id )
-            old_status = job.status
-            if job.status.state == Status.SUBMITTED:
-                job.status.state = (Status.RUNNING, Status.PENDING)[ random.randint(0, 1) ]
-            elif job.status.state == Status.PENDING:
-                job.status.state = (Status.RUNNING, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
-                if job.status.state != Status.RUNNING:
-                    job.end_time = datetime.now()
-            elif job.status.state == Status.RUNNING:
-                job.status.state = (Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 2)]
-                job.end_time = datetime.now()
-            self._log.debug("%s change status from %s to %s and put %s in table" % (self._name, old_status, job.status, job.id))
-            self.table.put(job)
-        else:
-            self._log.debug("%s do nothing" % self._name)
+        if old_status == Status.SUBMITTED:
+            job.status.state = (Status.RUNNING, Status.PENDING, Status.HOLD)[random.randint(0, 2)]
+        elif old_status == Status.PENDING:
+            job.status.state = (Status.PENDING, Status.RUNNING, Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 4)]
+        elif old_status == Status.HOLD:
+            job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
+        elif old_status == Status.RUNNING:
+            job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
+        if job.status.is_ended():
+            job.end_time = datetime.now()
         ####################### FIN BOUCHON #########################################
-        
-        self._log.debug( "%s exiting" % self._name)
+        self._log.debug("{0} set job {1} status {2} to {3}".format(self._name, 
+                                                                   self.job_id, 
+                                                                   Status.UPDATING, 
+                                                                   job.status.state))
+        #only now the monitor is aware of the new status
+        self.table.put(job)
+        self._log.debug("{0} exiting".format(self._name))
         
         

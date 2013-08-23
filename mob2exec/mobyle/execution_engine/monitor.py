@@ -27,6 +27,7 @@ class JtMonitor(multiprocessing.Process):
     The JtMonitor monitor the jobs table and for each job start a new actor 
     according the job status.  
     """
+    
     def __init__(self, jobs_table, master_q):
         """
         :param jobs_table: the container shared by all containing all JobRef alive in the system
@@ -41,7 +42,7 @@ class JtMonitor(multiprocessing.Process):
         self._log = None
         
     def run(self):
-        self._name = "Monitor-%d" % self.pid
+        self._name = "Monitor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_monitor')
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
@@ -65,25 +66,25 @@ class JtMonitor(multiprocessing.Process):
                 break
             for job in all_jobs:
                 if job.status.is_buildable():
-                    actor = BuildActor( self.table, job.id  )
-                    self._log.debug( "%s start a new BuildActor = %s"%(self._name, actor.name) )
+                    actor = BuildActor(self.table, job.id)
+                    self._log.debug("{0} start a new BuildActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
-                    self._child_process.append( actor)
+                    self._child_process.append(actor)
                 elif job.status.is_submittable() :
-                    actor = SubmitActor( self.table, job.id  )
-                    self._log.debug( "%s start a new SubmitActor = %s"%(self._name, actor.name) )
+                    actor = SubmitActor(self.table, job.id)
+                    self._log.debug( "{0} start a new SubmitActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
-                    self._child_process.append( actor)
+                    self._child_process.append(actor)
                 elif job.status.is_queryable():
-                    actor = StatusActor( self.table, job.id )
-                    self._log.debug( "%s start a new StatusActor = %s"%(self._name, actor.name) )
+                    actor = StatusActor(self.table, job.id)
+                    self._log.debug("{0} start a new StatusActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
-                    self._child_process.append( actor)
+                    self._child_process.append(actor)
                 elif job.status.is_ended() and job.must_be_notified() and not job.has_been_notified:
-                    actor = NotificationActor( self.table , job.id  )
-                    self._log.debug( "%s start a new NotificationActor = %s"%(self._name, actor.name) )
+                    actor = NotificationActor(self.table, job.id)
+                    self._log.debug("{0} start a new NotificationActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
-                    self._child_process.append( actor)
+                    self._child_process.append(actor)
             time.sleep(2)
             #remove zombies
             for p in self._child_process:
@@ -100,8 +101,11 @@ class JtMonitor(multiprocessing.Process):
             p.join()
             
     def reload_conf(self):
+        """
+        reload the configuration from mongo
+        """
         #relire la conf
-        self._log.debug("%s reload() relit sa conf" %self._name )
+        self._log.debug("{0} reload() relit sa conf".format(self._name))
         
 
       

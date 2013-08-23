@@ -47,7 +47,7 @@ class DBManager(multiprocessing.Process):
         self._log = None
         
     def run(self):
-        self._name = "DBManager-%d" % self.pid
+        self._name = "DBManager-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_DBManager')
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
@@ -116,18 +116,18 @@ class DBManager(multiprocessing.Process):
        
         #entries = list(connection.ClJob.find({'status': { '$in' : Status.active_states() }}))
         entries = list(connection.Job.find({'status': { '$in' : Status.active_states() }}))
-        #self._log.debug("%s new entries = %s"%(self.name, [en.id for en in entries]))           
+        self._log.debug("{0} new entries = {1}".format(self.name, [en.id for en in entries]))           
         
         #check if a job is already in jobs_table 
         active_jobs_id = [j.id for j in self.jobs_table.jobs()]
-        #self._log.debug( "%s active_jobs_id = %s (%d)"%(self._name, active_jobs_id, len(active_jobs_id)))
+        self._log.debug("{0} active_jobs_id = {1} ({2:d})".format(self._name, active_jobs_id, len(active_jobs_id)))
         new_jobs = [j for j in entries if j.id not in active_jobs_id]
-        #self._log.debug( "%s new_jobs = %s"%(self._name, [j.id for j in new_jobs]))
+        self._log.debug("{0} new_jobs = {1}".format(self._name, [j.id for j in new_jobs]))
         return new_jobs
 
     
     def reload_conf(self):
-        #relire la conf
-        self.self._log.debug("%s reload() relit sa conf" % self._name)
-        pass  
+        """reload the configuration"""
+        
+        self.self._log.debug("{0} reload() relit sa conf".format(self._name))
         

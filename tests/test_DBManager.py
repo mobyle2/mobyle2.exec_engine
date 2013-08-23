@@ -58,6 +58,9 @@ class DBManagerTest(unittest.TestCase):
             obj.delete()        
            
     def test_stop(self):
+        """
+        test if all jobs in jobTable are save in mongoDB before manager exiting
+        """
         jobs= []
         for i in range(0,10):
             job = connection.ClJob()
@@ -69,6 +72,7 @@ class DBManagerTest(unittest.TestCase):
             jobs.append(job)
          
         for j in jobs:
+            j.status.state = Status.UPDATING
             j.status.state = Status.FINISHED
               
         jt = JobsTable()
@@ -91,7 +95,7 @@ class DBManagerTest(unittest.TestCase):
         for i in range(0,10):
             job = connection.ClJob()
             job.project = self.project.id
-            job.name = "job_%d" % i
+            job.name = "job_{:d}".format(i)
             job.owner = {'id': self.project.id, 'klass': 'Project'}
             job.status = Status(Status.RUNNING)
             job.save()
@@ -99,12 +103,13 @@ class DBManagerTest(unittest.TestCase):
         
         job_to_keep = connection.ClJob()
         job_to_keep.project = self.project.id
-        job_to_keep.name = "job_%d" % i
+        job_to_keep.name = "job_{0:d}".format(i)
         job_to_keep.owner = {'id': self.project.id, 'klass': 'Project'}
         job_to_keep.status = Status(Status.RUNNING)
         job_to_keep.save()
                             
         for j in jobs_to_update:
+            j.status.state = Status.UPDATING
             j.status.state = Status.FINISHED
             
         jt = JobsTable()
@@ -128,10 +133,10 @@ class DBManagerTest(unittest.TestCase):
             
     def test_get_active_jobs(self):
         jobs_send = []
-        for i in range(0,10):
+        for i in range(0, 10):
             job = connection.ClJob()
             job.project = self.project.id
-            job.name = "job_%d" % i
+            job.name = "job_{0:d}".format(i)
             job.owner = {'id': self.project.id, 'klass': 'Project'}
             job.status = Status(choice((Status.INIT, 
                                         Status.BUILDING, 

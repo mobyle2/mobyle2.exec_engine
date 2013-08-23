@@ -65,7 +65,7 @@ write them on log files.
         time.sleep(1)
         self._running = True
         setproctitle.setproctitle('mob2_master')
-        self._name = "Master-%d"% os.getpid()
+        self._name = "Master-{:d}".format(os.getpid())
         
         logging.config.dictConfig(server_log_config)
         
@@ -85,21 +85,21 @@ write them on log files.
         
         self.jt = JobsTable()
         self.mon_q = multiprocessing.Queue()
-        self.mon = JtMonitor(self.jt , self.mon_q)
+        self.mon = JtMonitor(self.jt, self.mon_q)
         self.db_q = multiprocessing.Queue()
         self.db_mgr = DBManager(self.jt, self.db_q)
         self.mon.start()
         self.db_mgr.start()
         
         while self._running:
-            self._log.debug( "%s is in while %f"%(self._name , time.time()) )
+            self._log.debug("{0} is in while {1:f}".format(self._name, time.time()))
             if not self.mon.is_alive():
-                self._log.warning( "%s the Monitor is dead I restart one" % self._name)
-                self.mon = JtMonitor( self.jt, self.mon_q )
+                self._log.warning("{0} the Monitor is dead I restart one".format(self._name))
+                self.mon = JtMonitor(self.jt, self.mon_q)
                 self.mon.start()
             if not self.db_mgr.is_alive():
-                self._log.warning( "%s the DBManager is dead I restart one" % self._name)
-                self.db_mgr = DBManager( self.jt, self.db_q )
+                self._log.warning("{0} the DBManager is dead I restart one".format(self._name))
+                self.db_mgr = DBManager(self.jt, self.db_q)
                 self.db_mgr.start()                
             time.sleep(5)
         self.mon.join()
@@ -108,21 +108,20 @@ write them on log files.
         """
         stop DBmanager, monitor and logger properly before exiting
         """
-        #print self._name," recieved STOP"
         self._running = False
         cmd = 'STOP'
-        self._log.debug( "put %s in monitor Q"%cmd)
+        self._log.debug("put {0} in monitor Q".format(cmd))
         self.mon_q.put(cmd)
         self.mon.join()
-        self._log.debug( "put %s in DbManager Q"%cmd)
-        self.db_q.put( cmd )
+        self._log.debug("put {0} in DbManager Q".format(cmd))
+        self.db_q.put(cmd)
         self.db_mgr.join()
-        self._log.debug( "shutdown logger server") 
+        self._log.debug("shutdown logger server") 
         self.log_receiver.shutdown()
         self.log_server_thread.join()    
     
     def reload_conf(self, signum, frame):
-        print self._name," recieved reload" 
+        self._log.debug("{0} recieved reload".format(self._name)) 
         cmd = 'RELOAD'
         self.mon_q.put(cmd)
         self.db_q.put( cmd )
@@ -156,20 +155,20 @@ reload : to reload he configuration file without stopping the daemon (not implem
 
     def mob2_pid(lock_file):
         pid = None
-        if os.path.exists( lock_file ):
+        if os.path.exists(lock_file):
             try:
-                f = file( lock_file , 'r')
-                pid = int( f.readline() )
+                f = file(lock_file, 'r')
+                pid = int(f.readline())
                 f.close()
             except Exception:
                 pass
         return pid
     
-    def communicate( pid , signum ): 
+    def communicate(pid, signum): 
         try:    
-            os.kill(pid, signum )
-        except OSError , err:
-            print >> sys.stderr , "%s (pid= %d) not responding: %s" % (sys.argv[0], pid , err)    
+            os.kill(pid, signum)
+        except OSError, err:
+            print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     
     lock_file = cfg.get("mob2exec","pid_file")     
@@ -179,9 +178,9 @@ reload : to reload he configuration file without stopping the daemon (not implem
     #                   #
     #####################         
     if args.cmd == 'start':
-        pid = mob2_pid( lock_file )
+        pid = mob2_pid(lock_file)
         if pid:
-            print >> sys.stderr,"%s is already running abort this one (pid=%d)" % (lock_file, pid)
+            print >> sys.stderr, "{0} is already running abort this one (pid={1:d})".format(lock_file, pid)
             sys.exit(2) 
             
         print "creation du pid_file"
@@ -213,11 +212,11 @@ reload : to reload he configuration file without stopping the daemon (not implem
     #                   #
     #####################         
     elif args.cmd == 'stop':
-        pid = mob2_pid( lock_file )
+        pid = mob2_pid(lock_file)
         if pid:
-            communicate( pid , signal.SIGTERM )
+            communicate(pid, signal.SIGTERM)
         else:
-            print >> sys.stderr , "%s is not running " % sys.argv[0]
+            print >> sys.stderr , "{0} is not running ".format(sys.argv[0])
             sys.exit(3)
     
     ######################
@@ -226,12 +225,12 @@ reload : to reload he configuration file without stopping the daemon (not implem
     #                    #
     ######################         
     elif args.cmd == 'reload':
-        pid = mob2_pid( lock_file )
+        pid = mob2_pid(lock_file)
         if pid:
-            communicate( pid, signal.SIGHUP )
+            communicate(pid, signal.SIGHUP)
         else:
             sys.exit(3)
     else:
-        assert True , parser.print_usage()
+        assert True, parser.print_usage()
 
         

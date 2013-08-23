@@ -41,4 +41,4 @@ from mobyle.common.job import ClJob
 all_jobs = connection.Job.find({})
 #all_jobs.sort()
 for job in all_jobs:
-    print "%s : %s : %s : %s : %s" % (job.id, job.name, job.status, job.create_time, job.end_time ) 
+    print "{0} : {1} : {2} : {3} : {4}".format(job.id, job.name, job.status, job.create_time, job.end_time) 

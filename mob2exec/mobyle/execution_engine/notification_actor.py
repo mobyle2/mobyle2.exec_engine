@@ -35,18 +35,18 @@ class NotificationActor(multiprocessing.Process):
         self.job_id = job_id
            
     def run(self):
-        self._name = "NotificationActor-%d" % self.pid
+        self._name = "NotificationActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_notification')
         logging.config.dictConfig(client_log_config)
-        self._log = logging.getLogger( __name__ ) 
+        self._log = logging.getLogger(__name__) 
         
-        job = self.table.pop(self.job_id )
+        job = self.table.get(self.job_id )
         if job.status.is_ended() and job.must_be_notified():
             job.has_been_notified = True
-            self._log.debug( "%s notified job %s and put it in table" % ( self._name , job.id ) )
+            self._log.debug( "{0} notified job {1} and put it in table".format(self._name, job.id))
             self.table.put( job )
         else:
-            self._log.debug( "%s job %s must not be notified" % (self._name, job.id) )
-        self._log.debug( "%s exiting" % self._name )
+            self._log.debug( "{0} job {1} must not be notified".format(self._name, job.id))
+        self._log.debug( "{0} exiting".format(self._name))
         
         

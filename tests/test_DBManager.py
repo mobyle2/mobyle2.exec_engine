@@ -26,8 +26,8 @@ from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ClJob
 
-from mobyle.execution_engine.jobstable import JobsTable
-from mobyle.execution_engine.db_manager import DBManager
+from mobyle.execution_engine.engine.jobstable import JobsTable
+from mobyle.execution_engine.engine.db_manager import DBManager
 
 class DBManagerTest(unittest.TestCase):
 

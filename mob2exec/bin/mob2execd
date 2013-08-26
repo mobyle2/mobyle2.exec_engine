@@ -70,9 +70,9 @@ write them on log files.
         logging.config.dictConfig(server_log_config)
         
         from mobyle.core.logger import LogRecordSocketReceiver
-        from mobyle.execution_engine.jobstable import JobsTable    
-        from mobyle.execution_engine.monitor import JtMonitor
-        from mobyle.execution_engine.db_manager import DBManager
+        from mobyle.execution_engine.engine.jobstable import JobsTable    
+        from mobyle.execution_engine.engine.monitor import JtMonitor
+        from mobyle.execution_engine.engine.db_manager import DBManager
        
         try:
             self.log_receiver = LogRecordSocketReceiver()

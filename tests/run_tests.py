@@ -51,9 +51,9 @@ def run(lib, tests, verbosity = 0):
 if __name__ == '__main__':
     
     if 'MOBYLE_HOME' in os.environ:
-        MOBYLE_HOME = os.environ['MOBYLE_HOME']
+        MOBYLE_HOME = os.path.abspath(os.path.join(os.environ['MOBYLE_HOME'],"mob2exec"))
     else:
-        MOBYLE_HOME = os.path.abspath( os.path.join( os.path.dirname( __file__ ), "../", "mob2exec"))
+        MOBYLE_HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), "../", "mob2exec"))
     
     from argparse import ArgumentParser    
     parser = ArgumentParser()

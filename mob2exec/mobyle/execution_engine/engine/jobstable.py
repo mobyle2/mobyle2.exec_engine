@@ -35,7 +35,7 @@ class JobsTable(object):
     
     def __iter__(self):
         jobs = self.jobs()    
-        return iter( jobs )
+        return iter(jobs)
     
     def put(self, job):
         """add a Job instance in table

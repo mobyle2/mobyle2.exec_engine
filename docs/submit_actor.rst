@@ -4,7 +4,7 @@
 execution_engine.submit_actor 
 *****************************
 
-.. automodule:: lib.execution_engine.submit_actor
+.. automodule:: execution_engine.submit_actor
    :members:
    :private-members:
    :special-members:

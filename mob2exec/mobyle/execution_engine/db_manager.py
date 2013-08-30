@@ -9,6 +9,7 @@
 # @license: GPLv3
 #===============================================================================
 
+import os
 import logging
 import logging.config
 from conf.logger import client_log_config
@@ -16,9 +17,12 @@ from conf.logger import client_log_config
 import multiprocessing
 import time
 import setproctitle
- 
-from lib.core.jobref import JobRef
-from lib.core.status import Status
+
+#from mobyle.common.config import Config
+#config = Config( os.path.join( os.path.dirname(__file__), 'test.conf'))
+from mobyle.common.connection import connection
+from mobyle.common.job import Job, ClJob, Status
+
 
          
 class DBManager(multiprocessing.Process):
@@ -31,25 +35,25 @@ class DBManager(multiprocessing.Process):
     
     def __init__(self, jobs_table, master_q):
         """
-        :param jobs_table: the container shared by all execution_engine members and containing all :class:`lib.core.jobref.AbstractJobRef` object alive in the system
+        :param jobs_table: the container shared by all execution_engine members and containing all :mod:`mobyle.common.job` object alive in the system
         :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
         :param master_q: a communication queue to listen comunication emit by the :class:`bin.mobexecd.Master` instance
         :type master_q: :class:`multiprocessing.Queue` instance
         
         """
-        super( DBManager, self).__init__()
+        super(DBManager, self).__init__()
         self.master_q = master_q
         self.jobs_table = jobs_table
         self._log = None
         
     def run(self):
-        self._name = "DBManager-%d" % self.pid
+        self._name = "DBManager-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_DBManager')
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
         while True :
             try:
-                from_master = self.master_q.get( False ) if not self.master_q.empty() else None
+                from_master = self.master_q.get(False) if not self.master_q.empty() else None
             except IOError:
                 #[Errno 32] Broken pipethe Master does not respond anymore
                 #then the jobsTable is down too
@@ -62,146 +66,68 @@ class DBManager(multiprocessing.Process):
             try:
                 jobs_to_update = self.jobs_table.jobs()
             except IOError:
-                #[Errno 32] Broken pipethe Master does not respond anymore
+                #[Errno 32] Broken pipe the Master does not respond anymore
                 #then the jobsTable is down too
                 break
-            with DBConnection() as conn:
-                self.update_jobs( conn , jobs_to_update )
-                new_jobs = self.get_new_jobs( conn )
-            for job in new_jobs:
-                self.jobs_table.put( job )
+            self.update_jobs(jobs_to_update)
+            active_jobs = self.get_active_jobs()
+            for job in active_jobs:
+                self.jobs_table.put(job)
             time.sleep(2)
      
     def stop(self):
+        """
+        update the jobs in the DB with jobs informations from the JobsTable before exiting
+        """
         jobs_to_update = self.jobs_table.jobs()
-        with DBConnection() as conn:
-            self.update_jobs(conn , jobs_to_update)       
+        self.update_jobs(jobs_to_update)       
             
-    def update_jobs(self , conn , jobs_to_update ):
-        """synchronize the db with the jobs from the jobs_table
+    def update_jobs(self, jobs_to_update):
+        """
+        synchronize the db with the jobs from the jobs_table
         and remove completed jobs from the jobs table
         
-        :param conn: a connection to the database
-        :type conn:
         :param jobs_to_update: the jobs to update
-        :type jobs_to_update: list of :class:`lib.core.jobref.JobRef` instance. 
+        :type jobs_to_update: list of :mod:`mobyle.common.job` instance. 
         """
         for job in jobs_to_update:
-            #mise a jour de tous les jobs 
-            conn[ job.id ].update( {
-                                       'status': str( job.status ),
-                                       'end_time': job.end_time ,
-                                       'has_been_notified' : job.has_been_notified
-                                       }
-                                     ) 
+            #mise a jour de tous les jobs
+            job.save() 
             if job.status.is_ended() :
                 if job.must_be_notified():
                     if job.has_been_notified:
-                        self.jobs_table.pop( job.id )
+                        self.jobs_table.pop(job.id)
                     else:
                         pass
                 else:
-                    self.jobs_table.pop( job.id )
+                    self.jobs_table.pop(job.id)
             else:
                 pass
 
-    def get_new_jobs(self , conn ):
-        """get the new job entries in the db and fill the jobs_table with the corresponding job
-        
-        :param conn: a connection to the database
-        :type conn:
+    def get_active_jobs(self):
         """
-        ## Bouchon simulant une requette a la DB pour recuperer les nouveau job a soumettre ##
-        global job_cpt
-        max_job = 500
-        entries = []
-        if job_cpt == max_job:
-            return entries
-        for id_ in range(job_cpt , min(job_cpt + 10 , max_job) ):
-            job_cpt = id_
-            try:
-                job = conn[ id_ ]        
-            except KeyError:
-                continue
-            entries.append( job )
-            job_cpt += 1                            
-        self._log.debug( "%s new entries = %s"%(self._name, [ en['id'] for en in entries ] ) )           
-        ## fin bouchon ##
+        :returns: the all the jobs that should handle by the exec_engine
+        :rtype: list of :mod:`mobyle.common.job`
+        """
+        #entries is a cursor (a kind of generator, NOT a list
+        #I assume that we will not have too many jobs at one time
+        #check if it's always the case even after the exec_egine is stopped for a while and restart
+        #while the portal continue to accept new jobs 
+       
+        #entries = list(connection.ClJob.find({'status': { '$in' : Status.active_states() }}))
+        entries = list(connection.Job.find({'status': { '$in' : Status.active_states() }}))
+        self._log.debug("{0} new entries = {1}".format(self.name, [en.id for en in entries]))           
         
-        active_jobs_id = [ j.id for j in self.jobs_table.jobs() ]
-        self._log.debug( "%s active_jobs_id = %s (%d)"%(self._name, active_jobs_id, len( active_jobs_id )) )
-        new_jobs = []
-        for entry in entries:
-            job_id = entry['id'] 
-            if job_id not in active_jobs_id:
-                job = JobRef( entry['id'], entry['create_time'] , Status( Status.BUILDING ), entry['owner'] )
-                new_jobs.append( job )
-        self._log.debug( "%s new_jobs = %s"%(self._name, [ j.id for j in new_jobs ]))
+        #check if a job is already in jobs_table 
+        active_jobs_id = [j.id for j in self.jobs_table.jobs()]
+        self._log.debug("{0} active_jobs_id = {1} ({2:d})".format(self._name, active_jobs_id, len(active_jobs_id)))
+        new_jobs = [j for j in entries if j.id not in active_jobs_id]
+        self._log.debug("{0} new_jobs = {1}".format(self._name, [j.id for j in new_jobs]))
         return new_jobs
 
     
     def reload_conf(self):
-        #relire la conf
-        self.self._log.debug("%s reload() relit sa conf" %self._name )
-        pass  
+        """reload the configuration"""
         
-
-      
-##############################################
-#
-# Bouchon DB
-#
-#############################################
-
-
-import cPickle 
-import os.path  
-class DBConnection(object):
-    
-    def __init__(self , cnx_params = None):
-        self.cnx_params = { 'path' : '/tmp/mob2.db' }
-        self.cnx = None
-    
-    
-    def open(self):
-        if not os.path.exists( self.cnx_params['path']) or os.path.getsize(self.cnx_params['path']) == 0:
-            f = open( self.cnx_params['path'] , 'w')
-            self.cnx = {}
-            cPickle.dump( self.cnx , f )
-            f.close()
-        f = open( self.cnx_params['path'])
-        self.cnx = cPickle.load( f )
-        f.close()
-        return self.cnx
-    
-    def close(self):
-        self.cnx = None
-    
-    def commit(self):
-        f = open( self.cnx_params['path'] , 'w')
-        cPickle.dump( self.cnx , f )
-        f.close()
-        self.cnx = None
+        self.self._log.debug("{0} reload() relit sa conf".format(self._name))
         
-    def rollback(self):
-        self.close()
-    
-    
-    def __enter__(self):
-        #gerer la connnection a la base de donnée
-        d = self.open()
-        return d
-    
-    def __exit__(self, exctype, exc, tb):
-        """
-        """
-        if tb is None: #no traceback means no error
-            self.commit()
-            success = True
-        else:
-            self.rollback()
-            success = False
-        return success
-
-
-job_cpt = 0

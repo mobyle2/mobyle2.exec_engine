@@ -26,8 +26,8 @@ class SubmitActor(multiprocessing.Process):
 
     def __init__(self, table, job_id ):
         """
-        :param jobs_table: the container shared by all containing all :class:`lib.execution_engine.jobref.JobRef` alive in the system
-        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :param table: the container shared by all containing all :class:`lib.execution_engine.job.Job` alive in the system
+        :type table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
         :param job_id: the id of the job to treat
         :type job_id: string
         

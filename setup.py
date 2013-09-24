@@ -5,9 +5,13 @@ from distutils.core import setup
 from distutils.dist import Distribution
 from distutils.command.install_egg_info import install_egg_info
 from distutils.command.build import build
+from distutils.util import get_platform
+from distutils.errors import DistutilsOptionError
+from distutils.core import Command
 from distutils.versionpredicate import VersionPredicate
 import time
 import sys
+import os
 
 class check_and_build(build):
     def run(self):
@@ -46,47 +50,93 @@ class check_and_build(build):
             pass
         return True
 
-class test_mobexec_engine(build):
+class test(Command):
     
     description = "run the unit tests against the build library"
     
-    user_options = [ ('verbosity' , 'v' , 'verbosity of outputs', 1)]
+    user_options = [('verbosity' , 'v' , 'verbosity of outputs', 1),
+                    ('build-base=', 'b', "base build directory (default: 'build.build-base')"),
+                    ('build-lib=', None, "build directory for all modules (default: 'build.build-lib')"),
+                    ('plat-name=', 'p', "platform name to build for, if supported (default: %s)" % get_platform()),
+                    ]
     
     help_options = []
     
 
     def initialize_options(self):
-        build.initialize_options(self)
         self.verbosity = None
+        self.build_base = 'build'
+        self.build_lib = None
+        self.build_purelib = None
+        self.build_platlib = None
+        self.plat_name = None
+        
         
     def finalize_options(self):
+        #if self.build_lib is None:
+        #    self.build_lib = os.path.join(self.build_base, 'lib' )
         if self.verbosity is None:
             self.verbosity = 0
         else:
             self.verbosity = int(self.verbosity)
-    
+            
+        if self.plat_name is None:
+            self.plat_name = get_platform()
+        else:
+            # plat-name only supported for windows (other platforms are
+            # supported via ./configure flags, if at all).  Avoid misleading
+            # other platforms.
+            if os.name != 'nt':
+                raise DistutilsOptionError(
+                            "--plat-name only supported on Windows (try "
+                            "using './configure --help' on your platform)")
+
+        plat_specifier = ".%s-%s" % (self.plat_name, sys.version[0:3])
+
+        # Make it so Python 2.x and Python 2.x with --with-pydebug don't
+        # share the same build directories. Doing so confuses the build
+        # process for C modules
+        if hasattr(sys, 'gettotalrefcount'):
+            plat_specifier += '-pydebug'
+
+        # 'build_purelib' and 'build_platlib' just default to 'lib' and
+        # 'lib.<plat>' under the base build directory.  We only use one of
+        # them for a given distribution, though --
+        if self.build_purelib is None:
+            self.build_purelib = os.path.join(self.build_base, 'lib')
+        if self.build_platlib is None:
+            self.build_platlib = os.path.join(self.build_base,
+                                              'lib' + plat_specifier)
+
+        # 'build_lib' is the actual directory that we will use for this
+        # particular module distribution -- if user didn't supply it, pick
+        # one of 'build_purelib' or 'build_platlib'.
+        if self.build_lib is None:
+            if self.distribution.ext_modules:
+                self.build_lib = self.build_platlib
+            else:
+                self.build_lib = self.build_purelib
+                
     
     def run(self):
         """
         """
-        import os
-        this_dir = os.getcwd()
-
-        # change to the test dir and run the tests
-        os.chdir("tests")
-        sys.path.insert(0, '')
+        sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         import run_tests
-        try:
-            import mobyle.common
-        except ImportError:
-            sys.exit("""The project mobyle2.lib is not installed or not in PYTHONPATH.
-skip tests.""")
-        run_tests.run(self.build_lib, [], verbosity = self.verbosity)
-
-        # change back to the current directory
-        os.chdir(this_dir)
-
-
+        print "self.build_base = ", self.build_base
+        print "self.build_lib = ", self.build_lib
+        test_res = run_tests.run(self.build_lib, [], verbosity = self.verbosity)
+        if not test_res.wasSuccessful():
+            for error in test_res.errors:
+                if error[0].__class__.__name__ == 'ModuleImportFailure':
+                    err_cause = error[1].split('\n')[-3] #traceback ends with 2 \n
+                    if err_cause.startswith('ImportError: No module named common.'):
+                        sys.exit("""\nThe project mobyle2.lib is not installed or not in PYTHONPATH.
+mobyle2.exec_engine depends of this project.                         
+                        """)
+            sys.exit("some test fails run tests with -vv option to have details")
+        
+            
 
 class UsageDistribution(Distribution):
     
@@ -122,9 +172,12 @@ setup( distclass = UsageDistribution,
                      'Programming Language :: Python' ,
                      'Topic :: Bioinformatics' ,
                     ] ,
-      packages    = ['mobyle' , 'mobyle.execution_engine'],
+      packages    = ['mobyle', 
+                     'mobyle.execution_engine',
+                     'conf'
+                     ],
       package_dir = {'': 'mob2exec'},
       scripts     = [ 'mob2exec/bin/mob2execd' ] ,
       cmdclass= { 'build' : check_and_build,
-                  'test': test_mobexec_engine }
+                  'test': test }
       )

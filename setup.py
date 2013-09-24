@@ -87,6 +87,7 @@ class test(Command):
                         sys.exit("""\nThe project mobyle2.lib is not installed or not in PYTHONPATH.
 mobyle2.exec_engine depends of this project.                         
                         """)
+            sys.exit("some test fails run tests with -vv option to have details")
         
             
 

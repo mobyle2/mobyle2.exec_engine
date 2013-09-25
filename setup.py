@@ -5,6 +5,8 @@ from distutils.core import setup
 from distutils.dist import Distribution
 from distutils.command.install_egg_info import install_egg_info
 from distutils.command.build import build
+from distutils.util import get_platform
+from distutils.errors import DistutilsOptionError
 from distutils.core import Command
 from distutils.versionpredicate import VersionPredicate
 import time
@@ -54,7 +56,8 @@ class test(Command):
     
     user_options = [('verbosity' , 'v' , 'verbosity of outputs', 1),
                     ('build-base=', 'b', "base build directory (default: 'build.build-base')"),
-                    ('build-lib=', None, "build directory for all modules (default: 'build.build-lib')")
+                    ('build-lib=', None, "build directory for all modules (default: 'build.build-lib')"),
+                    ('plat-name=', 'p', "platform name to build for, if supported (default: %s)" % get_platform()),
                     ]
     
     help_options = []
@@ -64,20 +67,71 @@ class test(Command):
         self.verbosity = None
         self.build_base = 'build'
         self.build_lib = None
+        self.build_purelib = None
+        self.build_platlib = None
+        self.plat_name = None
+        
         
     def finalize_options(self):
-        if self.build_lib is None:
-            self.build_lib = os.path.join(self.build_base, 'lib' )
+        #if self.build_lib is None:
+        #    self.build_lib = os.path.join(self.build_base, 'lib' )
         if self.verbosity is None:
             self.verbosity = 0
         else:
             self.verbosity = int(self.verbosity)
+            
+        if self.plat_name is None:
+            self.plat_name = get_platform()
+        else:
+            # plat-name only supported for windows (other platforms are
+            # supported via ./configure flags, if at all).  Avoid misleading
+            # other platforms.
+            if os.name != 'nt':
+                raise DistutilsOptionError(
+                            "--plat-name only supported on Windows (try "
+                            "using './configure --help' on your platform)")
+
+        plat_specifier = ".%s-%s" % (self.plat_name, sys.version[0:3])
+
+        # Make it so Python 2.x and Python 2.x with --with-pydebug don't
+        # share the same build directories. Doing so confuses the build
+        # process for C modules
+        if hasattr(sys, 'gettotalrefcount'):
+            plat_specifier += '-pydebug'
+
+        # 'build_purelib' and 'build_platlib' just default to 'lib' and
+        # 'lib.<plat>' under the base build directory.  We only use one of
+        # them for a given distribution, though --
+        if self.build_purelib is None:
+            self.build_purelib = os.path.join(self.build_base, 'lib')
+        if self.build_platlib is None:
+            self.build_platlib = os.path.join(self.build_base,
+                                              'lib' + plat_specifier)
+
+        # 'build_lib' is the actual directory that we will use for this
+        # particular module distribution -- if user didn't supply it, pick
+        # one of 'build_purelib' or 'build_platlib'.
+        if self.build_lib is None:
+            if os.path.exists(self.build_purelib):
+                self.build_lib = self.build_purelib
+            elif os.path.exists(self.build_platlib):
+                self.build_lib = self.build_platlib
+            else:
+                assert True , """the builded lib cannot be found in {0} or {0}. 
+You must build the package before to test it (python setup.py build). 
+If you build it in other location, you must specify it for the test see options with "python setup.py test --help" """.format(self.build_purelib, self.build_platlib)
+            
+                
     
     def run(self):
         """
         """
         sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         import run_tests
+        print "self.build_base = ", self.build_base
+        print "self.build_lib = ", self.build_lib
+        
+            
         test_res = run_tests.run(self.build_lib, [], verbosity = self.verbosity)
         if not test_res.wasSuccessful():
             for error in test_res.errors:
@@ -87,6 +141,7 @@ class test(Command):
                         sys.exit("""\nThe project mobyle2.lib is not installed or not in PYTHONPATH.
 mobyle2.exec_engine depends of this project.                         
                         """)
+            sys.exit("some test fails run tests with -vv option to have details")
         
             
 

@@ -117,10 +117,10 @@ class test(Command):
             elif os.path.exists(self.build_platlib):
                 self.build_lib = self.build_platlib
             else:
-                assert True , """the builded lib cannot be found in {0} or {0}. 
-You must build the package before to test it (python setup.py build). 
-If you build it in other location, you must specify it for the test see options with "python setup.py test --help" """.format(self.build_purelib, self.build_platlib)
-            
+                msg = """the builded lib cannot be found in {0} or {0}. 
+ You must build the package before to test it (python setup.py build). 
+ If you build it in other location, you must specify it for the test see options with "python setup.py test --help" """.format(self.build_purelib, self.build_platlib)
+                raise DistutilsOptionError(msg)
                 
     
     def run(self):

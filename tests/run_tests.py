@@ -45,8 +45,8 @@ def run(lib, tests, verbosity = 0):
             else:
                 sys.stderr.write(  "%s : no such file or directory\n" % test) 
 
-    unittest.TextTestRunner(verbosity = verbosity).run(suite)
-
+    res = unittest.TextTestRunner(verbosity = verbosity).run(suite)
+    return res
 
 if __name__ == '__main__':
     

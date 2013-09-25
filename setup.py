@@ -128,8 +128,6 @@ If you build it in other location, you must specify it for the test see options 
         """
         sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         import run_tests
-        print "self.build_base = ", self.build_base
-        print "self.build_lib = ", self.build_lib
         test_res = run_tests.run(self.build_lib, [], verbosity = self.verbosity)
         if not test_res.wasSuccessful():
             for error in test_res.errors:
@@ -139,7 +137,7 @@ If you build it in other location, you must specify it for the test see options 
                         sys.exit("""\nThe project mobyle2.lib is not installed or not in PYTHONPATH.
 mobyle2.exec_engine depends of this project.                         
                         """)
-            sys.exit("some test fails run tests with -vv option to have details")
+            sys.exit("some tests fails. Run python setup.py test -vv to have more details")
         
             
 

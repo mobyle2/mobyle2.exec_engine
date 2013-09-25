@@ -112,10 +112,15 @@ class test(Command):
         # particular module distribution -- if user didn't supply it, pick
         # one of 'build_purelib' or 'build_platlib'.
         if self.build_lib is None:
-            if self.distribution.ext_modules:
+            if os.path.exists(self.build_purelib):
+                self.build_lib = self.build_purelib
+            elif os.path.exists(self.build_platlib):
                 self.build_lib = self.build_platlib
             else:
-                self.build_lib = self.build_purelib
+                assert True , """the builded lib cannot be found in {0} or {0}. 
+You must build the package before to test it (python setup.py build). 
+If you build it in other location, you must specify it for the test see options with "python setup.py test --help" """.format(self.build_purelib, self.build_platlib)
+            
                 
     
     def run(self):

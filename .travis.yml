@@ -17,6 +17,6 @@ install:
 script: 
 - python setup.py build
 - python setup.py test -vv
-- cd tests && coverage run run_tests.py && coverage html
+- cd tests && coverage run --source ../mob2exec/mobyle/execution_engine run_tests.py && coverage html
 after_success:
   - coveralls

@@ -112,10 +112,15 @@ class test(Command):
         # particular module distribution -- if user didn't supply it, pick
         # one of 'build_purelib' or 'build_platlib'.
         if self.build_lib is None:
-            if self.distribution.ext_modules:
+            if os.path.exists(self.build_purelib):
+                self.build_lib = self.build_purelib
+            elif os.path.exists(self.build_platlib):
                 self.build_lib = self.build_platlib
             else:
-                self.build_lib = self.build_purelib
+                msg = """the builded lib cannot be found in {0} or {0}. 
+ You must build the package before to test it (python setup.py build). 
+ If you build it in other location, you must specify it for the test see options with "python setup.py test --help" """.format(self.build_purelib, self.build_platlib)
+                raise DistutilsOptionError(msg)
                 
     
     def run(self):
@@ -123,8 +128,6 @@ class test(Command):
         """
         sys.path.insert(0, os.path.join(os.getcwd(), 'tests'))
         import run_tests
-        print "self.build_base = ", self.build_base
-        print "self.build_lib = ", self.build_lib
         test_res = run_tests.run(self.build_lib, [], verbosity = self.verbosity)
         if not test_res.wasSuccessful():
             for error in test_res.errors:
@@ -134,7 +137,7 @@ class test(Command):
                         sys.exit("""\nThe project mobyle2.lib is not installed or not in PYTHONPATH.
 mobyle2.exec_engine depends of this project.                         
                         """)
-            sys.exit("some test fails run tests with -vv option to have details")
+            sys.exit("some tests fails. Run python setup.py test -vv to have more details")
         
             
 

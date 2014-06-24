@@ -20,57 +20,59 @@ from mobyle.common.mobyleError import MobyleError
 
 
 
-_rules = {}
-
-def register(func):
+def make_register():
     """
-    decorator which register a function as an available routing job rule
-    ..note ::
-
-      @rules.register
-      def alacon(job):
-           print job
-    
-    a rule must have only one argument named job
+    generator of register. capture rules in closure accessible from register and load_rules
     """
-    if func.func_name in _rules:
-        raise MobyleError("there is several rules for routing job named \"{0}\"".format(func.func_name))
-    argspec = inspect.getargspec(func)
-    if not len(argspec.args) >= 1:
-        raise MobyleError("invalid rules signature. rule need at least 1 a job as first argument".format(func.func_name))
-    if argspec.args[0] != 'job':
-        import warnings
-        warnings.warn("rule take a 'job' as parameter, {0} defined with \"{1}\"".format(func.func_name, argspec.args[0]), SyntaxWarning)
-    _rules[func.func_name] = func
-    return func
-    
+    rules = {}
 
-
-def load_rules():
-    """ 
-    discover all modules in routing_rules package and load rules defined in them.
-    :return: the register of rules
-    :rtype: dict
-    """
-    global _rules
-    if _rules:
-        _rules= {}
+    def register(func):
+        """
+        decorator which register a function as an available routing job rule
+        ..note ::
     
-    def load(path):
-        sys.path.insert(0, path)
-        for f in glob.glob(os.path.join(path, '*.py')):
-            module_name = os.path.splitext( os.path.basename(f))[0]
-            if module_name != '__init__':
-                __import__(module_name, globals(), locals(), [module_name])
-        #clean the sys.path to avoid name collision
-        sys.path.pop(0)
+          @rules.register
+          def alacon(job):
+               print job
         
-    mobyle_rules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "routing_rules"))
-    load(mobyle_rules_path)
-    user_rules_path = os.path.abspath(os.path.join( os.path.dirname(__file__), '..', '..', '..', 'routing_rules'))
-    load(user_rules_path)
-    return _rules
+        a rule must have only one argument named job
+        """
+        if func.func_name in rules:
+            raise MobyleError("there is several rules for routing job named \"{0}\"".format(func.func_name))
+        argspec = inspect.getargspec(func)
+        if not len(argspec.args) >= 1:
+            raise MobyleError("invalid rules signature. rule need at least 1 a job as first argument".format(func.func_name))
+        if argspec.args[0] != 'job':
+            import warnings
+            warnings.warn("rule take a 'job' as parameter, {0} defined with \"{1}\"".format(func.func_name, argspec.args[0]), SyntaxWarning)
+        rules[func.func_name] = func
+        return func
 
+    def load_rules():
+        """ 
+        discover all modules in routing_rules package and load rules defined in them.
+        :return: the register of rules
+        :rtype: dict
+        """
+        if rules:
+            rules.clear()
+        
+        def load(path):
+            sys.path.insert(0, path)
+            for f in glob.glob(os.path.join(path, '*.py')):
+                module_name = os.path.splitext( os.path.basename(f))[0]
+                if module_name != '__init__':
+                    __import__(module_name, globals(), locals(), [module_name])
+            #clean the sys.path to avoid name collision
+            sys.path.pop(0)
+            
+        mobyle_rules_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "routing_rules"))
+        load(mobyle_rules_path)
+        user_rules_path = os.path.abspath(os.path.join( os.path.dirname(__file__), '..', '..', '..', 'routing_rules'))
+        load(user_rules_path)
+        return rules.copy()
 
+    
 
+register, load_rules = make_register()
     

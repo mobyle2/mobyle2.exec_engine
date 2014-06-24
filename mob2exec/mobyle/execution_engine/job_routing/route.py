@@ -160,3 +160,75 @@ class Dispatcher(object):
                 return route 
             
             
+def _get_dispatcher():
+    from mobyle.execution_engine.systems.execution_system import load_execution_classes
+    conf = { "execution_systems" : [{"name" : "big_one",
+                              "class" : "OgsDRMAA",
+                              "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                               "cell" : '/usr/local/sge',
+                                               "root" : 'default', 
+                                               },
+                                "native_specifications": " -q mobyle-long " 
+                                },
+                                {"name" : "small_one",
+                                 "class" : "OgsDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                                  "cell" : '/usr/local/sge',
+                                                  "root" : 'default' 
+                                                  },
+                                 "native-options": " -q mobyle-small " 
+                                 },
+                                {"name" : "cluster_two",
+                                 "class" : "TorqueDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/torque/libdrmaa.so",
+                                                  "server_name" : "localhost" 
+                                                  },
+                                 "native_specifications": " -q mobyle-small " 
+                                 },
+                                {"name" : "local",
+                                 "class" : "Local",
+                                 "native_specifications" : " nice -n 18 "
+                                 }],
+            
+                "map": [ ("route_1", {"rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
+                                                                              "parameters" : {"name": "Filochard"}}],
+                                      "exec_sys" : "big_one" 
+                                      }),
+                         ("route_2", {"rules" : [{"name" : "project_match",
+                                                  "parameters" : {"name": "dans le cambouis"}} ],
+                                      "exec_sys" : "small_one" 
+                                      }),
+                         ("default", {"rules" : [],
+                                      "exec_sys" : "cluster_two" 
+                                      })
+                        ]
+               } 
+    exec_klass = load_execution_classes()
+    exec_systems = {}
+    for exec_conf in conf["execution_systems"]:
+        try:
+            klass = exec_klass[exec_conf["class"]]
+        except KeyError, err:
+            raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
+        opts = exec_conf["drm_options"] if "drm_options" in exec_conf else {}
+        opts.update({"native_specifications" : exec_conf["native_specifications"]} if "native_specifications" in exec_conf else {})
+        try:
+            exec_systems[exec_conf["name"]] = klass( exec_conf["name"], **opts )
+        except Exception, err:
+            print exec_conf["name"]
+            print opts
+            print err       
+    dispatcher = Dispatcher()
+
+    for route_conf in conf["map"]:
+        rules = []
+        for rule_conf in route_conf[1]["rules"]:
+            rule = Rule(rule_conf["name"], parameters = rule_conf["parameters"] if "parameters" in rule_conf else {})
+            rules.append(rule)
+        exec_sys = exec_systems[route_conf[1]["exec_sys"]]
+        route = Route(route_conf[0], exec_sys, rules )
+        dispatcher.append(route)
+    return dispatcher
+
+
+dispatcher = _get_dispatcher()

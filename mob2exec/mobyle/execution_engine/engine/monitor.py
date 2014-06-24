@@ -21,6 +21,8 @@ from .build_actor import BuildActor
 from .submit_actor import SubmitActor
 from .status_actor import StatusActor
 from .notification_actor import NotificationActor
+
+from ..job_routing.route import dispatcher
         
 class JtMonitor(multiprocessing.Process):
     """
@@ -31,7 +33,7 @@ class JtMonitor(multiprocessing.Process):
     def __init__(self, jobs_table, master_q):
         """
         :param jobs_table: the container shared by all containing all JobRef alive in the system
-        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :type jobs_table: :class:`execution_engine.jobstable.JobsTable` instance 
         :param master_q: a communication queue to listen comunication emit by the :class:`bin.mob2execd.Master` instance
         :type master_q: `multiprocessing.Queue` instance
         """
@@ -40,6 +42,8 @@ class JtMonitor(multiprocessing.Process):
         self.table = jobs_table
         self._child_process = []
         self._log = None
+        self.dispatcher = dispatcher
+        
         
     def run(self):
         self._name = "Monitor-{:d}".format(self.pid)
@@ -71,6 +75,9 @@ class JtMonitor(multiprocessing.Process):
                     actor.start()
                     self._child_process.append(actor)
                 elif job.status.is_submittable() :
+                    route = self.dispatcher.which_route(job) 
+                    self.job.route = route
+                    self.table.put(job)
                     actor = SubmitActor(self.table, job.id)
                     self._log.debug( "{0} start a new SubmitActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()

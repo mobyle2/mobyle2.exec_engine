@@ -52,6 +52,10 @@ class SubmitActor(multiprocessing.Process):
         # here the code to submit a job
         
         ######################  
+        #
+        # recuperer la classe d'executon pour ce job
+        #   
+        # faire run
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
         acc_log = logging.getLogger('access')
         acc_log.info("test access log {0}".format(self._name))

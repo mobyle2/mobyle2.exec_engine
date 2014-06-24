@@ -35,7 +35,7 @@ def run(lib, tests, verbosity = 0):
         suite = unittest.TestLoader().discover(os.path.dirname(__file__), pattern="test_*.py" ) 
     else:
         suite = unittest.TestSuite()
-        for test in args.tests: 
+        for test in tests: 
             if os.path.exists(test):
                 if os.path.isfile(test):
                     fpath, fname =  os.path.split( test )
@@ -70,4 +70,5 @@ if __name__ == '__main__':
                         )
     
     args = parser.parse_args()
-    run(MOBYLE_HOME, args.tests, args.verbosity)
+    res = run(MOBYLE_HOME, args.tests, args.verbosity)
+    sys.exit(res)

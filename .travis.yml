@@ -9,9 +9,14 @@ branches:
 # command to install dependencies
 install: 
 - "pip install mongokit mf"
+- "pip install coverage"
+- "pip install python-coveralls"
 - "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
 - "pip install -r requirements.txt --use-mirrors"
 # command to run tests
 script: 
 - python setup.py build
 - python setup.py test -vv
+- cd tests && coverage run --source ../mob2exec/mobyle/execution_engine run_tests.py && coverage html
+after_success:
+  - coveralls

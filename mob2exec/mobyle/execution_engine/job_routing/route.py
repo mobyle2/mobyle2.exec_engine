@@ -53,7 +53,7 @@ class Route(object):
     a route is the association between a set of rules and an execution systems
     """
     
-    def __init__(self, name, exec_sys, rules = []):
+    def __init__(self, name, exec_sys, rules = None):
         """
         :param name:
         :type name: string
@@ -100,7 +100,13 @@ class Dispatcher(object):
     the container for all routes
     """
     
-    def __init__(self, routes = OrderedDict()):
+    def __init__(self, routes = None):
+        """
+        :param routes: the set of routes
+        :type routes: OrderedDict
+        """
+        if routes is None:
+            routes = OrderedDict()
         self.routes = routes 
 
     def __getattr__(self, name):

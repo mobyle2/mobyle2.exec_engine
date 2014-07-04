@@ -76,7 +76,7 @@ class JtMonitor(multiprocessing.Process):
                     self._child_process.append(actor)
                 elif job.status.is_submittable() :
                     route = self.dispatcher.which_route(job) 
-                    self.job.route = route
+                    job.route = route
                     self.table.put(job)
                     actor = SubmitActor(self.table, job.id)
                     self._log.debug( "{0} start a new SubmitActor = {1} job = {2}".format(self._name, actor.name, job.id))

@@ -95,14 +95,14 @@ class DispatcherTest(unittest.TestCase):
     def test_wich_test(self):
         d = Dispatcher()
         default = Route('default', self.exec_sys)
-        route_1 = Route('route_1', self.exec_sys, [self.rule_job_first])
-        route_2 = Route('route_2', self.exec_sys, [self.rule_is_local])
-        route_3 = Route('route_3', self.exec_sys, [self.rule_job_first, self.rule_is_local])
+        route_1 = Route('route_1A', self.exec_sys, [self.rule_job_first])
+        route_2 = Route('route_2A', self.exec_sys, [self.rule_is_local])
+        route_3 = Route('route_3A', self.exec_sys, [self.rule_job_first, self.rule_is_local])
         d.append(route_3)
         d.append(route_2)  
         d.append(route_1) 
         d.append(default)
-        
+         
         #route_1 rule_job_first = job name = first job
         self.assertEqual(d.which_route(self.job_1), route_1)  
         #route_2 rule_is_local owner = bidule

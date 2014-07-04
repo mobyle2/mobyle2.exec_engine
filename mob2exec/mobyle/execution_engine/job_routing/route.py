@@ -48,22 +48,6 @@ class Rule(object):
         return f(job, **self.parameters)
     
         
-# class CustomRule(CustomType):
-#     
-#     mongo_type = unicode
-#     init_type = Rule
-#     
-#         
-#     def to_bson(self, value):
-#         return {'name' : value.name,  
-#                 'parameters' : value.kwargs
-#                 }
-#     
-#     def to_python(self, value):
-#         return Rule(value['name'], parameters = value['parameters'])
-#     
-
-
 class Route(object):
     """
     a route is the association between a set of rules and an execution systems
@@ -80,6 +64,8 @@ class Route(object):
         """
         self.name = name
         self._exec_sys = exec_sys
+        if rules is None:
+            rules = []
         self.rules = rules
     
     
@@ -109,25 +95,6 @@ class Route(object):
         return True
     
 
-# class CustomRoute(CustomType):
-#     
-#     mongo_type = unicode
-#     init_type = Route
-#     
-#         
-#     def to_bson(self, value):
-#         return {'name' : value.name,  
-#                 'rules': [CustomRule().to_bson(r) for r in value.rules ],
-#                 'parameters' : value.kwargs
-#                 }
-#     
-#     def to_python(self, value):
-#         return Route(value['name'], 
-#                      exec_sys =  value['exec_sys'],
-#                      rules = value['rules'])
-        
-        
-        
 class Dispatcher(object):
     """
     the container for all routes
@@ -146,6 +113,11 @@ class Dispatcher(object):
         return len(self.routes)
     
     def append(self, route):
+        """
+        :param route: a route to appnd to this dispatcher
+        :type route: c'ass:`Route` instance
+        
+        """
         self.routes[route.name] = route
     
     def which_route(self,job):

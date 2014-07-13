@@ -26,8 +26,8 @@ class SubmitActor(multiprocessing.Process):
 
     def __init__(self, table, job_id ):
         """
-        :param jobs_table: the container shared by all containing all :class:`lib.execution_engine.jobref.JobRef` alive in the system
-        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
+        :param table: the container shared by all containing all :class:`lib.execution_engine.job.Job` alive in the system
+        :type table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
         :param job_id: the id of the job to treat
         :type job_id: string
         
@@ -52,6 +52,10 @@ class SubmitActor(multiprocessing.Process):
         # here the code to submit a job
         
         ######################  
+        #
+        # recuperer la classe d'executon pour ce job
+        #   
+        # faire run
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
         acc_log = logging.getLogger('access')
         acc_log.info("test access log {0}".format(self._name))

@@ -35,7 +35,7 @@ def run(lib, tests, verbosity = 0):
         suite = unittest.TestLoader().discover(os.path.dirname(__file__), pattern="test_*.py" ) 
     else:
         suite = unittest.TestSuite()
-        for test in args.tests: 
+        for test in tests: 
             if os.path.exists(test):
                 if os.path.isfile(test):
                     fpath, fname =  os.path.split( test )
@@ -51,9 +51,9 @@ def run(lib, tests, verbosity = 0):
 if __name__ == '__main__':
     
     if 'MOBYLE_HOME' in os.environ:
-        MOBYLE_HOME = os.environ['MOBYLE_HOME']
+        MOBYLE_HOME = os.path.abspath(os.path.join(os.environ['MOBYLE_HOME'],"mob2exec"))
     else:
-        MOBYLE_HOME = os.path.abspath( os.path.join( os.path.dirname( __file__ ), "../", "mob2exec"))
+        MOBYLE_HOME = os.path.abspath(os.path.join(os.path.dirname(__file__), "../", "mob2exec"))
     
     from argparse import ArgumentParser    
     parser = ArgumentParser()
@@ -70,4 +70,5 @@ if __name__ == '__main__':
                         )
     
     args = parser.parse_args()
-    run(MOBYLE_HOME, args.tests, args.verbosity)
+    res = run(MOBYLE_HOME, args.tests, args.verbosity)
+    sys.exit(res)

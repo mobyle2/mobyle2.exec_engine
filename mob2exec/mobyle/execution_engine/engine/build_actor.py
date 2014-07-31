@@ -26,7 +26,7 @@ class BuildActor(multiprocessing.Process):
     """
     
 
-    def __init__(self, table, job_id ):
+    def __init__(self, table, job_id):
         """
         :param jobs_table: the container shared by all containing all :class:`lib.execution_engine.jobref.JobRef` alive in the system
         :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
@@ -70,7 +70,7 @@ class BuildActor(multiprocessing.Process):
         #acc_log.info( "test access log {0}".format(self._name))
         
         #the monitor is now aware of the new status
-        job.status.state = Status.TO_BE_SUBMITTED  
+        job.status.state = Status.TO_BE_SUBMITTED
         self.table.put(job)
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
@@ -94,3 +94,4 @@ class BuildActor(multiprocessing.Process):
             raise MobyleError , "Internal server Error"
         os.umask(0022)
         job.dir = job_dir
+        

@@ -128,7 +128,6 @@ class Dispatcher(object):
             
 def _get_dispatcher():
     from mobyle.execution_engine.systems.execution_system import load_execution_classes
-    
     exec_klass = load_execution_classes()
     exec_systems = {}
 

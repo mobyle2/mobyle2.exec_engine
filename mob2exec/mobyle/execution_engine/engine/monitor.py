@@ -22,7 +22,7 @@ from .submit_actor import SubmitActor
 from .status_actor import StatusActor
 from .notification_actor import NotificationActor
 
-from ..job_routing.route import dispatcher
+
         
 class JtMonitor(multiprocessing.Process):
     """
@@ -50,6 +50,9 @@ class JtMonitor(multiprocessing.Process):
         setproctitle.setproctitle('mob2_monitor')
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
+        
+        from ..job_routing.route import dispatcher
+        
         while True :
             try:
                 from_master = self.master_q.get( False ) if not self.master_q.empty() else None

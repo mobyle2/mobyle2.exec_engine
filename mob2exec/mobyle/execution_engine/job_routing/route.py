@@ -50,14 +50,12 @@ class Rule(object):
         f = self.func
         return f(job, **self.parameters)
     
-
-
 class Route(object):
     """
     a route is the association between a set of rules and an execution systems
     """
     
-    def __init__(self, name, exec_sys, rules = []):
+    def __init__(self, name, exec_sys, rules = None):
         """
         :param name:
         :type name: string
@@ -68,6 +66,8 @@ class Route(object):
         """
         self.name = name
         self._exec_sys = exec_sys
+        if rules is None:
+            rules = []
         self.rules = rules
     
     @property
@@ -93,13 +93,19 @@ class Route(object):
                 return False
         return True
 
-        
+
 class Dispatcher(object):
     """
     the container for all routes
     """
     
-    def __init__(self, routes = OrderedDict()):
+    def __init__(self, routes = None):
+        """
+        :param routes: the set of routes
+        :type routes: OrderedDict
+        """
+        if routes is None:
+            routes = OrderedDict()
         self.routes = routes 
 
     def __getattr__(self, name):
@@ -112,6 +118,11 @@ class Dispatcher(object):
         return len(self.routes)
     
     def append(self, route):
+        """
+        :param route: a route to appnd to this dispatcher
+        :type route: c'ass:`Route` instance
+        
+        """
         self.routes[route.name] = route
     
     def which_route(self,job):

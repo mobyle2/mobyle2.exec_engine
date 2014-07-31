@@ -82,7 +82,12 @@ class BuildActor(multiprocessing.Process):
           - fixing permission
         """
         project = job.get_project()
-        job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
+        try:
+            job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
+        except Exception, err:
+            msg = "cannot build  the job dir the database may be corrupted project dir: {},  job id: {}".format(project.dir, job.id)
+            self._log.critical(msg)
+            raise MobyleError(msg)
         if os.path.exists(job_dir):
                 msg = 'cannot make job directory: {0} already exists'.format(job_dir)
                 self._log.error(msg)

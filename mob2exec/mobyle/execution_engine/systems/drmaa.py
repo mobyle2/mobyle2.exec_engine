@@ -13,7 +13,7 @@ from execution_system import ExecutionSystem
 class DRMAA(ExecutionSystem):
     
     def __init__(self, name, drmaa_library_path = None, native_specifications = ""):
-        super(DRMAA, self ).__init__(name)
+        super(DRMAA, self).__init__(name)
         self.drmaa_library_path = drmaa_library_path
         self.native_specifications = native_specifications
     

@@ -14,7 +14,7 @@ from execution_system import ExecutionSystem, register
 class Local(ExecutionSystem):
     
     def __init__(self, name, native_specifications = ""):
-        super(Local, self).__init__(name)
+        ExecutionSystem.__init__(self, name)
         self.native_specifications = native_specifications
     
     def run(self):

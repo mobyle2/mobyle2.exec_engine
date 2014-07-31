@@ -11,6 +11,9 @@
 from collections import OrderedDict
 from mongokit import CustomType
 
+import logging
+_log = logging.getLogger(__name__)
+
 from mobyle.common.connection import connection
 from mobyle.common.config import Config
 from mobyle.common.mobyleError import MobyleError
@@ -47,21 +50,6 @@ class Rule(object):
         f = self.func
         return f(job, **self.parameters)
     
-        
-# class CustomRule(CustomType):
-#     
-#     mongo_type = unicode
-#     init_type = Rule
-#     
-#         
-#     def to_bson(self, value):
-#         return {'name' : value.name,  
-#                 'parameters' : value.kwargs
-#                 }
-#     
-#     def to_python(self, value):
-#         return Rule(value['name'], parameters = value['parameters'])
-#     
 
 
 class Route(object):
@@ -82,11 +70,9 @@ class Route(object):
         self._exec_sys = exec_sys
         self.rules = rules
     
-    
     @property
     def exec_sys(self):
         return self._exec_sys
-    
     
     def append(self, rule):
         """
@@ -95,7 +81,6 @@ class Route(object):
         :type rule: a :class:`Rule` object 
         """
         self.rules.append(rule)
-    
     
     def allow(self, job):
         """
@@ -107,26 +92,7 @@ class Route(object):
             if not res:
                 return False
         return True
-    
 
-# class CustomRoute(CustomType):
-#     
-#     mongo_type = unicode
-#     init_type = Route
-#     
-#         
-#     def to_bson(self, value):
-#         return {'name' : value.name,  
-#                 'rules': [CustomRule().to_bson(r) for r in value.rules ],
-#                 'parameters' : value.kwargs
-#                 }
-#     
-#     def to_python(self, value):
-#         return Route(value['name'], 
-#                      exec_sys =  value['exec_sys'],
-#                      rules = value['rules'])
-        
-        
         
 class Dispatcher(object):
     """
@@ -162,73 +128,42 @@ class Dispatcher(object):
             
 def _get_dispatcher():
     from mobyle.execution_engine.systems.execution_system import load_execution_classes
-    conf = { "execution_systems" : [{"name" : "big_one",
-                              "class" : "OgsDRMAA",
-                              "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
-                                               "cell" : '/usr/local/sge',
-                                               "root" : 'default', 
-                                               },
-                                "native_specifications": " -q mobyle-long " 
-                                },
-                                {"name" : "small_one",
-                                 "class" : "OgsDRMAA", 
-                                 "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
-                                                  "cell" : '/usr/local/sge',
-                                                  "root" : 'default' 
-                                                  },
-                                 "native-options": " -q mobyle-small " 
-                                 },
-                                {"name" : "cluster_two",
-                                 "class" : "TorqueDRMAA", 
-                                 "drm_options" : {"drmaa_library_path" : "path/to/torque/libdrmaa.so",
-                                                  "server_name" : "localhost" 
-                                                  },
-                                 "native_specifications": " -q mobyle-small " 
-                                 },
-                                {"name" : "local",
-                                 "class" : "Local",
-                                 "native_specifications" : " nice -n 18 "
-                                 }],
-            
-                "map": [ ("route_1", {"rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
-                                                                              "parameters" : {"name": "Filochard"}}],
-                                      "exec_sys" : "big_one" 
-                                      }),
-                         ("route_2", {"rules" : [{"name" : "project_match",
-                                                  "parameters" : {"name": "dans le cambouis"}} ],
-                                      "exec_sys" : "small_one" 
-                                      }),
-                         ("default", {"rules" : [],
-                                      "exec_sys" : "cluster_two" 
-                                      })
-                        ]
-               } 
+    
     exec_klass = load_execution_classes()
     exec_systems = {}
-    for exec_conf in conf["execution_systems"]:
+
+    all_exec_in_conf = connection.ExecutionSystem.fetch({})
+    for exec_conf in all_exec_in_conf:
         try:
             klass = exec_klass[exec_conf["class"]]
         except KeyError, err:
             raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
-        opts = exec_conf["drm_options"] if "drm_options" in exec_conf else {}
-        opts.update({"native_specifications" : exec_conf["native_specifications"]} if "native_specifications" in exec_conf else {})
+        opts = exec_conf["drm_options"]
+        if opts is None:
+            opts = {}
+        native_specifications = exec_conf["native_specifications"]
+        if native_specifications:
+            opts["native_specifications"] = native_specifications
         try:
-            exec_systems[exec_conf["name"]] = klass( exec_conf["name"], **opts )
+            exec_systems[exec_conf["_id"]] = klass(exec_conf["_id"], **opts)
         except Exception, err:
-            print exec_conf["name"]
-            print opts
-            print err       
+            msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
+            _log.error(msg)
+            raise MobyleError(msg)
     dispatcher = Dispatcher()
-
-    for route_conf in conf["map"]:
+    
+    map_ = connection.ExecutionRoutes.fetch_one({})["map"]
+    for route_conf in map_:
         rules = []
-        for rule_conf in route_conf[1]["rules"]:
-            rule = Rule(rule_conf["name"], parameters = rule_conf["parameters"] if "parameters" in rule_conf else {})
+        for rule_conf in route_conf["rules"]:
+            parameters = rule_conf.get("parameters", {})
+            rule = Rule(rule_conf["name"], parameters = parameters)
             rules.append(rule)
-        exec_sys = exec_systems[route_conf[1]["exec_sys"]]
-        route = Route(route_conf[0], exec_sys, rules )
+        exec_sys = exec_systems[route_conf["exec_system"]]
+        route = Route(route_conf["name"], exec_sys, rules )
         dispatcher.append(route)
     return dispatcher
 
 
 dispatcher = _get_dispatcher()
+

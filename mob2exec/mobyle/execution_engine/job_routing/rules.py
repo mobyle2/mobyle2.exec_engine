@@ -71,7 +71,7 @@ def make_register():
         user_rules_path = os.path.abspath(os.path.join( os.path.dirname(__file__), '..', '..', '..', 'routing_rules'))
         load(user_rules_path)
         return rules.copy()
-
+    return register, load_rules
     
 
 register, load_rules = make_register()

@@ -41,7 +41,8 @@ from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ClJob
-
+from mobyle.common.job_routing_model import ExecutionSystem
+from mobyle.common.job_routing_model import ExecutionRoutes
 
 cmdlines = {
         1 : { 'name':'blast', 
@@ -70,17 +71,6 @@ pieds_nickeles = {}
 
 projects = {}
 
-
-def put_new_job_in_db(name, cmd_line, project ):
-    job = connection.ClJob()
-    job.project = project.id 
-    job.name = name
-    job.status = Status(Status.TO_BE_BUILT)
-    job.owner = {'id': project.id, 'klass': 'Project'}
-    job.cmd_line = cmd_line
-    job.save()
-    print("put new job {0} in db".format(job.id))
-
 def clean_db():
     old_jobs = connection.Job.find({})
     for obj in old_jobs:
@@ -94,7 +84,47 @@ def clean_db():
     for obj in old_projects:
         obj.delete()
         
+    try:
+        old_exec_sys = connection.ExecutionSystem.find({})
+        for obj in old_exec_sys:
+            obj.delete()
+    except AttributeError:
+        print >> sys.stderr, "collection ExecutionSystem not found"
+    try:
+        old_routes = connection.ExecutionRoutes.find({})
+        for obj in old_routes:
+            obj.delete()
+    except AttributeError:
+        print >> sys.stderr, "collection ExecutionRoutes not found"
+
         
+def push_exec_sys_in_db(conf):
+    exec_sys = connection.ExecutionSystem()
+    exec_sys['_id'] = conf['_id']
+    exec_sys['class'] = conf['class']
+    if "drm_options" in conf:
+        exec_sys["drm_options"] = conf["drm_options"]
+    if "native_specifications" in conf:
+        exec_sys["native_specifications"] = conf["native_specifications"]
+    exec_sys.save()
+    
+        
+def push_routes_in_db(conf_map):
+    _map = connection.ExecutionRoutes()
+    _map["map"] = conf_map
+    _map.save()   
+
+    
+def put_new_job_in_db(name, cmd_line, project ):
+    job = connection.ClJob()
+    job.project = project.id 
+    job.name = name
+    job.status = Status(Status.TO_BE_BUILT)
+    job.owner = {'id': project.id, 'klass': 'Project'}
+    job.cmd_line = cmd_line
+    job.save()
+    print("put new job {0} in db".format(job.id))
+                    
 def clean_dirs():
     projects_dir = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 'projects')
     if os.path.exists(projects_dir):
@@ -103,6 +133,7 @@ def clean_dirs():
 def create_user(name):
     user = connection.User()
     user['email'] = '{0}@pieds.nickelés.fr'.format(name)
+    user['first_name'] = name
     user.save()
     return user
 
@@ -119,11 +150,71 @@ def create_project(user, name):
     project.save()
     return project
 
+
 if __name__ == '__main__':
     
     clean_db()
     clean_dirs()
     
+    ######################################
+    # push conf for job routing in mongodb
+    ######################################
+    conf = { "execution_systems" : [{"_id" : "big_one",
+                              "class" : "OgsDRMAA",
+                              "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                               "cell" : '/usr/local/sge',
+                                               "root" : 'default', 
+                                               },
+                                "native_specifications": " -q mobyle-long " 
+                                },
+                                {"_id" : "small_one",
+                                 "class" : "OgsDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                                  "cell" : '/usr/local/sge',
+                                                  "root" : 'default' 
+                                                  },
+                                 "native_specifications": " -q mobyle-small " 
+                                 },
+                                {"_id" : "cluster_two",
+                                 "class" : "TorqueDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/torque/libdrmaa.so",
+                                                  "server_name" : "localhost" 
+                                                  },
+                                 "native_specifications": " -q mobyle-small " 
+                                 },
+                                {"_id" : "local",
+                                 "class" : "Local",
+                                 "native_specifications" : " nice -n 18 "
+                                 }],
+            
+                "map": [ {"name": "route_1", 
+                          "rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
+                                                                   "parameters" : {"name": "Filochard"}
+                                                                   }
+                                     ],
+                          "exec_system" : "big_one" 
+                                      },
+                         {"name" :"route_2",
+                          "rules" : [{"name" : "project_match", "parameters" : {"name": "dans le cambouis"}} ],
+                          "exec_system" : "small_one" 
+                         },
+                         {"name" : "default",
+                          "rules" : [],
+                          "exec_system" : "cluster_two" 
+                          }
+                        ]
+               }
+    
+    for exec_sys in conf["execution_systems"]:
+        push_exec_sys_in_db(exec_sys)
+
+    push_routes_in_db(conf["map"])  
+     
+     
+    #####################################################
+    # create Users, Projects, Job and push job in mongodb 
+    #####################################################
+            
     for name in ('Filochard', 'Ribouldingue', 'Croquignol'):
         pieds_nickeles[name] = create_user(name)
     

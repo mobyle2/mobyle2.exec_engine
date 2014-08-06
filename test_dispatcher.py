@@ -29,13 +29,6 @@ from mobyle.common.mobyleError import MobyleError
 
     
 
-            
-
-
-
-
-
-
 def clean_db():
     old_jobs = connection.Job.find({})
     for obj in old_jobs:
@@ -168,10 +161,10 @@ for exec_sys in conf["execution_systems"]:
 push_routes_in_db(conf["map"])
 
 ############## Test #####################################
-from mobyle.execution_engine.systems.execution_system import load_execution_classes
-from mobyle.execution_engine.job_routing.route import Rule, Route, Dispatcher
-
-dispatcher = Dispatcher()
+#from mobyle.execution_engine.systems.execution_system import load_execution_classes
+#from mobyle.execution_engine.job_routing.route import Rule, Route, Dispatcher
+#from mobyle.execution_engine.job_routing.route import Dispatcher
+from mobyle.execution_engine.job_routing.route import dispatcher
 
 recieved_routes = []    
 

@@ -103,7 +103,7 @@ write them on log files.
         
         logging.config.dictConfig(server_log_config)
         
-        from mobyle.core.logger import LogRecordSocketReceiver
+        from mobyle.execution_engine.logger import LogRecordSocketReceiver
         from mobyle.execution_engine.engine.jobstable import JobsTable    
         from mobyle.execution_engine.engine.monitor import JtMonitor
         from mobyle.execution_engine.engine.db_manager import DBManager
@@ -211,7 +211,8 @@ reload : to reload he configuration file without stopping the daemon (not implem
             print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     
-    lock_file = cfg.get("mob2exec","pid_file")     
+    lock_file = cfg.get("mob2exec","pid_file")  
+    print >> sys.stderr, "pid file = {0}".format(lock_file)
     #####################
     #                   #
     # start the daemon  #

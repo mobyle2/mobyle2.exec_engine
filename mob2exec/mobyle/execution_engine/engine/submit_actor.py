@@ -24,7 +24,7 @@ class SubmitActor(multiprocessing.Process):
     """
     
 
-    def __init__(self, table, job_id ):
+    def __init__(self, table, job_id):
         """
         :param table: the container shared by all containing all :class:`lib.execution_engine.job.Job` alive in the system
         :type table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
@@ -41,7 +41,7 @@ class SubmitActor(multiprocessing.Process):
         self._name = "SubmitActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_submit')
         
-        job = self.table.get(self.job_id )
+        job = self.table.get(self.job_id)
         job.status.state = Status.SUBMITTING
         self.table.put(job)
         
@@ -50,7 +50,11 @@ class SubmitActor(multiprocessing.Process):
         ###################### 
         
         # here the code to submit a job
-        
+        project = job.get_project()
+        self._log.debug( u"### DEBUG SubmitActor job.route = {0} ####".format(job.route))
+        self._log.debug( u"### DEBUG SubmitActor project = {0} ####".format(project['name']))
+        self._log.debug( u"### DEBUG SubmitActor user = {0} ####".format(project['owner']))
+        self._log.info( u"{0} job {1} (project = {2} ) has route {3}".format(self._name, job.id, project['name'], job.route.name))
         ######################  
         #
         # recuperer la classe d'executon pour ce job

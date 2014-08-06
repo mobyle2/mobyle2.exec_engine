@@ -42,7 +42,6 @@ class JtMonitor(multiprocessing.Process):
         self.table = jobs_table
         self._child_process = []
         self._log = None
-        self.dispatcher = dispatcher
         
         
     def run(self):
@@ -78,9 +77,13 @@ class JtMonitor(multiprocessing.Process):
                     actor.start()
                     self._child_process.append(actor)
                 elif job.status.is_submittable() :
-                    route = self.dispatcher.which_route(job) 
+                    route = dispatcher.which_route(job) 
+                    self._log.debug( "@@@@ DEBUG route = {0} @@@@".format(route))
                     job.route = route
+                    self._log.debug( "@@@@ DEBUG job.route = {0} @@@@".format(job.route))
                     self.table.put(job)
+                    self._log.debug( "@@@@ DEBUG PUT ROUTE in JOB {0} @@@@".format(job.id))
+                    self._log.debug( "@@@@ DEBUG route in job = {0}".format(bool('route' in dir(job))))
                     actor = SubmitActor(self.table, job.id)
                     self._log.debug( "{0} start a new SubmitActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()

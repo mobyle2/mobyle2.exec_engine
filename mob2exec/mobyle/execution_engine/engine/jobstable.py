@@ -55,7 +55,7 @@ class JobsTable(object):
         
         """
         with self._lock:
-            job = self.jobs_table[ job_id ]
+            job = self.jobs_table[job_id]
         return job
     
     def jobs(self):

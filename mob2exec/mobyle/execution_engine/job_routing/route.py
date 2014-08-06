@@ -24,7 +24,7 @@ class Rule(object):
     """is condition which can be ask """ 
     rules_reg = load_rules()
     
-    def __init__(self, name, parameters = {}):
+    def __init__(self, name, parameters = None):
         """
         :param name: the name of the rule
         :type name: string
@@ -32,6 +32,8 @@ class Rule(object):
         :type parameters: dict
         """
         self.name = name
+        if parameters is None:
+            parameters = {}
         self.parameters = parameters
         try:
             self.func = Rule.rules_reg[self.name]
@@ -139,6 +141,7 @@ class Dispatcher(object):
             
 def _get_dispatcher():
     from mobyle.execution_engine.systems.execution_system import load_execution_classes
+    from mobyle.common.job_routing_model import ExecutionSystem
     exec_klass = load_execution_classes()
     exec_systems = {}
 

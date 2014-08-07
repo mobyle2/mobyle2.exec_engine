@@ -12,44 +12,39 @@
 import logging
 import logging.config
 from conf.logger import client_log_config
-
-import multiprocessing
 import setproctitle
 import os
 
 from mobyle.common.job import Status       
 from mobyle.common.mobyleError import MobyleError
+from .actor import Actor
 
-class BuildActor(multiprocessing.Process):
+class BuildActor(Actor):
     """
     submit job to the execution system.
     """
     
 
-    def __init__(self, table, job_id):
+    def __init__(self, job_id):
         """
-        :param jobs_table: the container shared by all containing all :class:`lib.execution_engine.jobref.JobRef` alive in the system
-        :type jobs_table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
-        super(BuildActor, self).__init__()
-        self._log = None
-        self.table = table  
-        self.job_id = job_id
+        super(BuildActor, self).__init__(job_id)
            
     def run(self):
         self._name = "BuildActor-{0:d} job {1}".format(self.pid, self.job_id)
         setproctitle.setproctitle('mob2_build')
-        #change the status to aware the job that this job is currently building  
-        job = self.table.get(self.job_id)
-        job.status.state = Status.BUILDING
-        self.table.put(job)
         
         logging.config.dictConfig(client_log_config)
         self._log = logging.getLogger( __name__ ) 
-          
+        
+        #change the status to aware the job that this job is currently building  
+        job = self.get_job()
+        job.status.state = Status.BUILDING
+        job.save()
+        
         self.make_job_environement(job)
         os.chdir(job.dir)
         
@@ -71,7 +66,7 @@ class BuildActor(multiprocessing.Process):
         
         #the monitor is now aware of the new status
         job.status.state = Status.TO_BE_SUBMITTED
-        self.table.put(job)
+        job.save()
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
     

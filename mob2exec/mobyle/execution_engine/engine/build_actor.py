@@ -9,9 +9,7 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
 import logging.config
-from conf.logger import client_log_config
 import setproctitle
 import os
 
@@ -25,20 +23,20 @@ class BuildActor(Actor):
     """
     
 
-    def __init__(self, job_id):
+    def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
-        super(BuildActor, self).__init__(job_id)
+        super(BuildActor, self).__init__(job_id, log_conf)
            
     def run(self):
         self._name = "BuildActor-{0:d} job {1}".format(self.pid, self.job_id)
         setproctitle.setproctitle('mob2_build')
         
-        logging.config.dictConfig(client_log_config)
-        self._log = logging.getLogger( __name__ ) 
+        logging.config.dictConfig(self._log_conf)
+        self._log = logging.getLogger(__name__) 
         
         #change the status to aware the job that this job is currently building  
         job = self.get_job()

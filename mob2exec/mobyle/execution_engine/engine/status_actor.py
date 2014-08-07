@@ -9,9 +9,7 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
 import logging.config
-from conf.logger import client_log_config
 import setproctitle
 
 from mobyle.common.job import Status
@@ -28,20 +26,20 @@ class StatusActor(Actor):
     get the status from the execution system for a job
     """
     
-    def __init__(self, job_id ):
+    def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
-        super(StatusActor, self).__init__(job_id)
+        super(StatusActor, self).__init__(job_id, log_conf)
 
            
     def run(self):
         self._name = "StatusActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_status')
         
-        logging.config.dictConfig(client_log_config)
+        logging.config.dictConfig(self._log_conf)
         self._log = logging.getLogger( __name__ ) 
         
         job = self.get_job()

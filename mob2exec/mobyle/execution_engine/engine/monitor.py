@@ -11,14 +11,13 @@
 
 import logging
 import logging.config
-from conf.logger import client_log_config
-
 import multiprocessing
 import time
 import setproctitle
 
 from mobyle.common.connection import connection
 from mobyle.common.job import Job, ClJob, Status
+from mobyle.common.config import Config
 
 from .build_actor import BuildActor
 from .submit_actor import SubmitActor
@@ -76,7 +75,7 @@ class JtMonitor(multiprocessing.Process):
     according the job status.  
     """
     
-    def __init__(self, master_q):
+    def __init__(self, master_q, cfg):
         """
         :param master_q: a communication queue to listen comunication emit by the :class:`bin.mob2execd.Master` instance
         :type master_q: `multiprocessing.Queue` instance
@@ -85,13 +84,14 @@ class JtMonitor(multiprocessing.Process):
         self.master_q = master_q
         self.jobs_table = JobsTable()
         self._child_process = []
+        self._log_config = self.get_log_config(cfg)
         self._log = None
         
         
     def run(self):
         self._name = "Monitor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_monitor')
-        logging.config.dictConfig(client_log_config)
+        logging.config.dictConfig(self._log_config)
         self._log = logging.getLogger(__name__) 
         
         while True :
@@ -122,22 +122,22 @@ class JtMonitor(multiprocessing.Process):
                 if job is None:
                     self._log.Error('try to fetch job id = {0} which was not found in DB'.format(job_id))
                 if job.status.is_buildable():
-                    actor = BuildActor(job.id)
+                    actor = BuildActor(job.id, self._log_config)
                     self._log.debug("{0} start a new BuildActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
                     self._child_process.append(actor)
                 elif job.status.is_submittable() :
-                    actor = SubmitActor(job.id)
+                    actor = SubmitActor(job.id, self._log_config)
                     self._log.debug( "{0} start a new SubmitActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
                     self._child_process.append(actor)
                 elif job.status.is_queryable():
-                    actor = StatusActor(job.id)
+                    actor = StatusActor(job.id, self._log_config)
                     self._log.debug("{0} start a new StatusActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
                     self._child_process.append(actor)
                 elif job.status.is_ended() and job.must_be_notified() and not job.has_been_notified:
-                    actor = NotificationActor(job.id)
+                    actor = NotificationActor(job.id, self._log_config)
                     self._log.debug("{0} start a new NotificationActor = {1} job = {2}".format(self._name, actor.name, job.id))
                     actor.start()
                     self._child_process.append(actor)
@@ -194,6 +194,35 @@ class JtMonitor(multiprocessing.Process):
             else:
                 pass
                    
+    def get_log_config(self, cfg):
+        
+        client_log_config = { 'version' : 1 ,
+                'disable_existing_loggers': True,
+               'handlers': {
+                            'socket':{
+                                       'class' : 'logging.handlers.SocketHandler',
+                                       'host' : 'localhost',
+                                       'port' : 'ext://logging.handlers.DEFAULT_TCP_LOGGING_PORT',
+                                       'level' : 'DEBUG',
+                                       },
+                           
+                            'email': {
+                                                 'class': 'logging.handlers.SMTPHandler' ,
+                                                 'mailhost': cfg.get('mob2exec', 'log_email_mta'),
+                                                 'fromaddr': cfg.get('mob2exec','log_email_from').split(),
+                                                 'toaddrs' : cfg.get('mob2exec','log_email_to').split(),
+                                                 'subject' : cfg.get('mob2exec','log_email_subject'), 
+                                                 'level'   : cfg.get('mob2exec','log_email_level'),
+                                                 },
+                            }, 
+               
+               'loggers': { '' : {
+                                  'handlers': [ 'socket', 'email'] ,
+                                  'level': 'NOTSET'
+                                },
+                           }
+              }
+        return client_log_config
                     
     def stop(self):
         """

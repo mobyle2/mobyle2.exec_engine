@@ -9,9 +9,6 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
-import logging.config
-from conf.logger import client_log_config
 
 import multiprocessing
 import os
@@ -30,16 +27,17 @@ class Actor(multiprocessing.Process):
     """
     __metaclass__ =  ABCMeta
 
-    def __init__(self, job_id):
+    def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
         super(Actor, self).__init__()
-        self._log = None
         self.job_id = job_id
-           
+        self._log_conf =  log_conf  
+        self._log = None
+         
            
     def get_job(self): 
         """

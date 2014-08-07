@@ -9,9 +9,7 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
 import logging.config
-from conf.logger import client_log_config
 import setproctitle
 
 from mobyle.common.job import Status       
@@ -23,20 +21,20 @@ class SubmitActor(Actor):
     """
     
 
-    def __init__(self, job_id):
+    def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
-        super(SubmitActor, self).__init__(job_id)
+        super(SubmitActor, self).__init__(job_id, log_conf)
 
            
     def run(self):
         self._name = "SubmitActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_submit')
         
-        logging.config.dictConfig(client_log_config)
+        logging.config.dictConfig(self._log_conf)
         self._log = logging.getLogger(__name__) 
         
         from ..job_routing.route import dispatcher

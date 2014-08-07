@@ -9,11 +9,9 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
 import logging.config
-from conf.logger import client_log_config
-
 import setproctitle
+
 from .actor import Actor
         
 class NotificationActor(Actor):
@@ -21,18 +19,18 @@ class NotificationActor(Actor):
     notify that the job corresponding to job_id is completed
     """
     
-    def __init__(self, job_id ):
+    def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
         """
-        super(NotificationActor, self).__init__(job_id)
+        super(NotificationActor, self).__init__(job_id, log_conf)
 
            
     def run(self):
         self._name = "NotificationActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_notification')
-        logging.config.dictConfig(client_log_config)
+        logging.config.dictConfig(self._log_conf)
         self._log = logging.getLogger(__name__) 
         
         job = self.get_job()

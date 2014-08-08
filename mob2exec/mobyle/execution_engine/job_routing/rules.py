@@ -25,7 +25,8 @@ def make_register():
     generator of register. capture rules in closure accessible from register and load_rules
     """
     rules = {}
-
+    module_imported = {}
+    
     def register(func):
         """
         decorator which register a function as an available routing job rule
@@ -51,18 +52,23 @@ def make_register():
     def load_rules():
         """ 
         discover all modules in routing_rules package and load rules defined in them.
+        
+        if load_rules is called twice, new modules are taken in account, but the
+        deleted module or modification of module are ignored.
+        
         :return: the register of rules
         :rtype: dict
         """
-        if rules:
-            rules.clear()
-        
         def load(path):
             sys.path.insert(0, path)
             for f in glob.glob(os.path.join(path, '*.py')):
                 module_name = os.path.splitext( os.path.basename(f))[0]
                 if module_name != '__init__':
-                    __import__(module_name, globals(), locals(), [module_name])
+                    if module_name in module_imported:
+                        pass
+                    else:
+                        module = __import__(module_name, globals(), locals(), [module_name])
+                        module_imported[module_name] = module
             #clean the sys.path to avoid name collision
             sys.path.pop(0)
             

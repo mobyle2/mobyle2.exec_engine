@@ -216,7 +216,7 @@ class JtMonitor(multiprocessing.Process):
                                                  },
                             }, 
                
-               'loggers': { '' : {
+               'loggers': { 'mobyle' : {
                                   'handlers': [ 'socket', 'email'] ,
                                   'level': 'NOTSET'
                                 },

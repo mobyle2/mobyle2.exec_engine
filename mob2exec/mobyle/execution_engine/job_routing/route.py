@@ -144,7 +144,6 @@ def get_dispatcher():
     from mobyle.common.job_routing_model import ExecutionSystem
     exec_klass = load_execution_classes()
     exec_systems = {}
-
     all_exec_in_conf = connection.ExecutionSystem.fetch({})
     for exec_conf in all_exec_in_conf:
         try:
@@ -163,9 +162,30 @@ def get_dispatcher():
             msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
             _log.error(msg)
             raise MobyleError(msg)
+    if not exec_systems:
+        msg = "No execution systems found in config, set a default one using Local"
+        _log.warning(msg)
+        print "exec_klass = ", exec_klass
+        exec_systems['local'] = exec_klass['Local']('local')
+        
     dispatcher = Dispatcher()
-    
-    map_ = connection.ExecutionRoutes.fetch_one({})["map"]
+    try:
+        map_ = connection.ExecutionRoutes.fetch_one({})["map"]
+    except TypeError:
+        if len(exec_systems) == 1:
+            exec_sys = exec_systems[exec_systems.keys()[0]]
+            default_route = Route('DEFAULT', exec_sys)
+            dispatcher.append(default_route)
+            msg = "No routes have been configured, configure {0} as default to {0} execution system".format(exec_sys.name, default_route.name)
+            _log.warning(msg)
+            return dispatcher
+        else:
+            msg = "No routes have been configured, several execution system has been configured: configure routes"
+            _log.critical(msg)
+            raise MobyleError(msg)
+        
+        #default_route = Route("DEFAULT", exec_sys)
+         
     for route_conf in map_:
         rules = []
         for rule_conf in route_conf["rules"]:

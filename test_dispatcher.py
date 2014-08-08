@@ -164,9 +164,10 @@ push_routes_in_db(conf["map"])
 #from mobyle.execution_engine.systems.execution_system import load_execution_classes
 #from mobyle.execution_engine.job_routing.route import Rule, Route, Dispatcher
 #from mobyle.execution_engine.job_routing.route import Dispatcher
-from mobyle.execution_engine.job_routing.route import dispatcher
+from mobyle.execution_engine.job_routing.route import get_dispatcher
 
 recieved_routes = []    
+dispatcher = get_dispatcher()
 
 for i in range(0, 3):
     job = create_job(name_str[i], projects[i])

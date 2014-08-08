@@ -139,7 +139,7 @@ class Dispatcher(object):
                 return route 
             
             
-def _get_dispatcher():
+def get_dispatcher():
     from mobyle.execution_engine.systems.execution_system import load_execution_classes
     from mobyle.common.job_routing_model import ExecutionSystem
     exec_klass = load_execution_classes()
@@ -177,6 +177,4 @@ def _get_dispatcher():
         dispatcher.append(route)
     return dispatcher
 
-
-dispatcher = _get_dispatcher()
 

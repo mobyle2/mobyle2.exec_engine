@@ -12,7 +12,8 @@
 import logging.config
 import setproctitle
 
-from mobyle.common.job import Status       
+from mobyle.common.job import Status
+from ..job_routing.route import get_dispatcher
 from .actor import Actor
 
 class SubmitActor(Actor):
@@ -37,8 +38,6 @@ class SubmitActor(Actor):
         logging.config.dictConfig(self._log_conf)
         self._log = logging.getLogger(__name__) 
         
-        from ..job_routing.route import dispatcher
-        
         job = self.get_job()
         job.status.state = Status.SUBMITTING
         job.save()
@@ -46,6 +45,7 @@ class SubmitActor(Actor):
         ###################### 
         
         # here the code to submit a job
+        dispatcher = get_dispatcher()
         route = dispatcher.which_route(job)
         exec_system = route.exec_sys
         

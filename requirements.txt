@@ -1,0 +1,4 @@
+
+# exec_engine dependencies
+setproctitle>=1.1.3
+python-daemon>=1.6

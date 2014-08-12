@@ -180,7 +180,6 @@ setup( distclass = UsageDistribution,
                      'mobyle.execution_engine.engine',
                      'mobyle.execution_engine.job_routing',
                      'mobyle.execution_engine.systems',
-                     'conf'
                      ],
       package_dir = {'': 'mob2exec'},
       scripts     = [ 'mob2exec/bin/mob2execd' ] ,

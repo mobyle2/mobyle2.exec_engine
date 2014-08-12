@@ -71,4 +71,5 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     res = run(MOBYLE_HOME, args.tests, args.verbosity)
-    sys.exit(res)
+    # res.wasSuccessful() is True when tests succed but a program which exit with succes must return 0
+    sys.exit(not res.wasSuccessful())

@@ -9,6 +9,9 @@ Welcome to mobyle2.exec_engine's documentation!
 Overview
 ========
   
+The role of the mobyle2.exec_engine is to get new job in the DB pushed by other parts of the projects (mobyle2.web for instance)
+and execute the job, get the results and notify the owner of the job when this latter is ended.
+
 Sources tree
 ------------
 

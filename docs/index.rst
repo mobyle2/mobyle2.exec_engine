@@ -143,7 +143,7 @@ how to test the engine
 Either you install the mobyle_exec_engine or define MOBYLE_HOME wich must point to root of
 the mobyle2.exec_engine project.
 
-The directory  */tmp/mob2* must be create it will contained all "mob2" files.
+The directory  **/tmp/mob2** must be create it will contained all "mob2" files.
 
 * mob2.stderr : the stderr temporary file for debugging in production this flow will be redirect to /dev/null
 * mob2.stdout : the stdout temporary file for debugging in production this flow will be redirect to /dev/null

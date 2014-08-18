@@ -101,7 +101,6 @@ write them on log files.
         logging.config.dictConfig(server_log_config)
         
         from mobyle.execution_engine.logger import LogRecordSocketReceiver
-        from mobyle.execution_engine.engine.jobstable import JobsTable    
         from mobyle.execution_engine.engine.monitor import JtMonitor
        
         try:

@@ -21,7 +21,7 @@ from mobyle.common.connection import connection
 from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status
-from mobyle.common.job import ClJob
+from mobyle.common.job import ProgramJob, Job
 
 from mobyle.execution_engine.engine.monitor import JobsTable
 
@@ -29,7 +29,7 @@ from mobyle.execution_engine.engine.monitor import JobsTable
 class JobsTableTest(unittest.TestCase):
 
     def setUp(self):
-        objects = connection.ClJob.find({})
+        objects = connection.Job.find({})
         for obj in objects:
             obj.delete()
             
@@ -44,7 +44,7 @@ class JobsTableTest(unittest.TestCase):
         
        
     def tearDown(self):
-        objects = connection.ClJob.find({})
+        objects = connection.Job.find({})
         for obj in objects:
             obj.delete()
         objects = connection.User.find({})
@@ -57,7 +57,7 @@ class JobsTableTest(unittest.TestCase):
                        
     def test_put_get_pop(self):
         jt = JobsTable()
-        j1 = connection.ClJob()
+        j1 = connection.ProgramJob()
         j1.project = self.project.id
         j1.name = "first job"
         j1.status = Status(Status.BUILDING)
@@ -74,7 +74,7 @@ class JobsTableTest(unittest.TestCase):
         jt = JobsTable()
         jobs_send = []
         for i in range(0, 5):
-            j = connection.ClJob()
+            j = connection.ProgramJob()
             j.project = self.project.id
             j.name = "job_%d" % i
             j.status = Status(Status.BUILDING)

@@ -16,7 +16,7 @@ import time
 import setproctitle
 
 from mobyle.common.connection import connection
-from mobyle.common.job import Job, ClJob, Status
+from mobyle.common.job import Job, ProgramJob, Status
 from mobyle.common.config import Config
 
 from .build_actor import BuildActor
@@ -162,7 +162,7 @@ class JtMonitor(multiprocessing.Process):
         #check if it's always the case even after the exec_egine is stopped for a while and restart
         #while the portal continue to accept new jobs 
        
-        #entries = list(connection.ClJob.find({'status': { '$in' : Status.active_states() }}))
+        #entries = list(connection.ProgramJob.find({'status': { '$in' : Status.active_states() }}))
         entries = list(connection.Job.find({'status': { '$in' : Status.active_states() }}))
         self._log.debug("{0} new entries = {1}".format(self.name, [en.id for en in entries]))           
         

@@ -40,7 +40,7 @@ from mobyle.common.connection import connection
 from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status
-from mobyle.common.job import ClJob
+from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
 from mobyle.common.job_routing_model import ExecutionRoutes
 
@@ -116,7 +116,7 @@ def push_routes_in_db(conf_map):
 
     
 def put_new_job_in_db(name, cmd_line, project ):
-    job = connection.ClJob()
+    job = connection.ProgramJob()
     job.project = project.id 
     job.name = name
     job.status = Status(Status.TO_BE_BUILT)

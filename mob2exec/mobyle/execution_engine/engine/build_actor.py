@@ -48,7 +48,7 @@ class BuildActor(Actor):
         
         #import data needed for the job
         
-        #build the cmdline??? seulement pour ClJob ???
+        #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
         
         #perform data conversion

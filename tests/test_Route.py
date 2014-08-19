@@ -20,7 +20,7 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status, ClJob
+from mobyle.common.job import Status, ProgramJob
 
 from mobyle.common.mobyleError import MobyleError
 from mobyle.execution_engine.job_routing.route import Rule
@@ -57,7 +57,7 @@ class RouteTest(unittest.TestCase):
         
         status = Status(Status.INIT)
         
-        self.job = connection.ClJob()
+        self.job = connection.ProgramJob()
         self.job.project = project.id
         self.job.name = "first job"
         self.job.status = status
@@ -72,7 +72,7 @@ class RouteTest(unittest.TestCase):
         self.exec_sys = Local("execution local")
        
     def tearDown(self):
-        objects = connection.ClJob.find({})
+        objects = connection.Job.find({})
         for obj in objects:
             obj.delete()
         objects = connection.User.find({})

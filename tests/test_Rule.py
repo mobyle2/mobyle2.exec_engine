@@ -20,7 +20,7 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status, ClJob
+from mobyle.common.job import Status, ProgramJob, Job
 from mobyle.common.job_routing_model import ExecutionRoutes
 
 from mobyle.common.mobyleError import MobyleError
@@ -104,7 +104,7 @@ class RuleTest(unittest.TestCase):
         
         status = Status(Status.INIT)
         
-        job = connection.ClJob()
+        job = connection.ProgramJob()
         job.project = project.id
         job.name = "first job"
         job.status = status

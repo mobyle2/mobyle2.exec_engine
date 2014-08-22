@@ -184,7 +184,7 @@ class CommandBuilder(object):
                     param_missing_value.append(parameter)
                     build_log.debug("add parameter {0} in param_missing_value".format(parameter.name))
             if param_missing_value:
-                build_log.debug("mandatory parameters missing value: {}".format(param_missing_value))
+                build_log.debug("mandatory parameters missing value: {}".format([p.name for p in param_missing_value]))
                 raise UserValueError(parameters = param_missing_value, message = "parameter is mandatory")
         return True    
             
@@ -221,11 +221,13 @@ class CommandBuilder(object):
             for parameter in program.inputs_list_by_argpos():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 arg_pos = parameter.argpos
+                build_log.debug("arg_pos = {}  command_is_insert = {}".format(arg_pos, command_is_insert))
                 if arg_pos >= 0 and not command_is_insert:
                     command = program.command
                     if command is not None:
                         command_line += command
                         command_is_insert = True
+                        build_log.debug("insert command : command_line = {0}".format(command_line))
                     else:
                         if parameter.command:
                             command_is_insert =True

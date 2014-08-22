@@ -17,6 +17,8 @@ import re
 
 from mobyle.common.data import ListData
 from mobyle.common.mobyleError import MobyleError, UserValueError
+from mobyle.common.eval_bool import EvalBoolFactory
+
 
 class BuildLogger(object):
     
@@ -25,19 +27,28 @@ class BuildLogger(object):
         self.name = 'build'
         self.stream = None
         self.log = None
-        self.formater = logging.Formatter('%(levelname)-8s : %(message)s')
+        #self.formater = logging.Formatter('%(levelname)-8s : %(message)s')
+        self.formater = logging.Formatter('%(message)s')
         ####################### BOUCHON ####################
         # aller dans la conf general de mobyle pour savoir quel est le niveau de debug de ce service
         # si pas defini => error
-        self.Level = 0
+        self.level = logging.DEBUG
     
-    def __enter__(self, file_name):
-        self.stream =  open(self.file_name, 'a')
+    
+    def __enter__(self):
+        try:
+            self.stream = open(self.file_name, 'a')
+        except IOError as err:
+            msg = "unable to create file {} for build_log: {}".format(self.file_name, err)
+            _log.critical(msg)
+            raise MobyleError("Server Internal Error")
         if self.log is None:
             self.log = logging.getLogger(self.name)
-            self.log.setLevel(self.level)
+            self.log.setLevel(1)
+            self.log.propagate = False
         handler = logging.StreamHandler(self.stream)
         handler.setFormatter(self.formater)
+        handler.setLevel(self.level)
         self.log.addHandler(handler)
         return self.log
 
@@ -50,14 +61,15 @@ class BuildLogger(object):
         #by default re-raise exc except if return True
 
 
+
 class CommandBuilder(object):
     
     def __init__(self, program_job):
         self.job = program_job
+        self._build_log_file_name = os.path.join(self.job.dir, '.cmd_build_log')
         self._evaluator = {}
         self._evaluator['re'] = re
-        self._pre_fill_evaluator(self._evaluator)
-        self._build_log_file_name = os.path.join(self.job.dir, '.cmd_build_log')
+        self._fill_evaluator(self._evaluator)
     
     def _pre_process_data(self, data):
         """
@@ -68,7 +80,7 @@ class CommandBuilder(object):
         """
         if data is None:
             value = None
-        elif isinstance(ListData, data):
+        elif isinstance(data, ListData):
             value = data.expr_value()
             value.sort()
         else:
@@ -85,24 +97,27 @@ class CommandBuilder(object):
         :type evaluator: :class:`Evaluator` object
         """
         with BuildLogger(self._build_log_file_name) as build_log:
-            build_log.debug('##################\n# fill evaluator #\n##################')
+            build_log.error('##################\n# fill evaluator #\n##################')
             program = self.job.service
             for parameter in program.inputs_list():
+                build_log.debug("------ parameter {0} ------".format(parameter.name))
                 value_data = self.job.get_input_value(parameter.name)
+                build_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
                     # if there is no vdef default_value return None
-                    value_data = parameter.default_value()
+                    value_data = parameter.default_value
                 value = self._pre_process_data(value_data)
-                self._cl_log.debug('{} = {}'.format(parameter.name, value))
+                build_log.debug('{0} = {1}'.format(parameter.name, value))
                 evaluator[parameter.name] = value
             build_log.debug("evaluator = {0}".format(evaluator))
             
     
     def _eval_precond(self, preconds, build_log):
+        eval_bool = EvalBoolFactory(values = self._evaluator)
         all_preconds_true = True
         for precond in preconds:
             try:
-                evaluated_precond = eval(precond, self._evaluator)
+                evaluated_precond = eval_bool.test(precond)
                 build_log.debug("precond = '{0}' => {1}".format(precond, evaluated_precond))
             except Exception as err:
                 msg = "ERROR during precond evaluation: {0} : {1}".format(precond, err)
@@ -116,7 +131,33 @@ class CommandBuilder(object):
         return all_preconds_true
         
         
-        
+    def check_ctrl(self):
+        """
+        :return: True  if all control parameter are True, else raise a UserValueError
+        :rtype: boolean
+        :raise UserValueError: if some ctrl failed
+        """
+        eval_bool = EvalBoolFactory(values = self._evaluator)
+        program = self.job.service
+        with BuildLogger(self._build_log_file_name) as build_log:
+            build_log.debug('##################\n# check control #\n##################') 
+            for parameter in program.inputs_list_by_argpos():
+                if parameter.has_ctrl():
+                    preconds = parameter.preconds
+                    all_preconds_true = self._eval_precond(preconds, build_log)
+                    if all_preconds_true:
+                        ctrls = parameter.get_ctrls()
+                        for crtl in ctrls:
+                            evaluated_ctrl = eval_bool.test(ctrl)
+                            build_log.debug("ctrl = '{0}' => {1}".format(ctrl, evaluated_ctrl))
+                            if not evaluated_ctrl:
+                                msg = '{0} : value provided {1}'.format()
+                                _log.error(msg)
+                                build_log.debug(msg)
+                                raise UserValueError(parameters = [parameter], message = msg)
+                    else:
+                        return True
+                          
     def check_mandatory(self):
         """
         :return: True, if all mandatory parameters have a value (check preconds if necessary).
@@ -126,14 +167,20 @@ class CommandBuilder(object):
         program = self.job.service
         param_missing_value = []
         with BuildLogger(self._build_log_file_name) as build_log:
-            build_log.debug('##################\n# check mandatory #\n##################')
+            build_log.debug('###################\n# check mandatory #\n###################')
             for parameter in program.inputs_list_by_argpos():
-                preconds = parameter.preconds()
+                build_log.debug("------ parameter {0} ------".format(parameter.name))
+                if not parameter.mandatory:
+                    build_log.debug(" not mandatory => next parameter")
+                    continue
+                build_log.debug("check parameter {0}".format(parameter.name))
+                build_log.debug("------ parameter {0} ------".format(parameter.name))
+                preconds = parameter.preconds
                 all_preconds_true = self._eval_precond(preconds, build_log)    
                 if not all_preconds_true :
-                    build_log.debug("next parameter")
+                    build_log.debug("all preconds are not True: next parameter")
                     continue #next parameter
-                if self._evaluator[parameter.name] is None and parameter.mandatory:
+                if self._evaluator[parameter.name] is None:
                     param_missing_value.append(parameter)
                     build_log.debug("add parameter {0} in param_missing_value".format(parameter.name))
             if param_missing_value:
@@ -142,26 +189,7 @@ class CommandBuilder(object):
         return True    
             
             
-    def check_ctrl(self):
-        """
-        :return: True  if all control parameter are True, else raise a UserValueError
-        :rtype: boolean
-        :raise UserValueError: if some ctrl failed
-        """
-        program = self.job.service
-        with BuildLogger(self._build_log_file_name) as build_log:
-            build_log.debug('##################\n# check control #\n##################') 
-            for parameter in program.inputs_list_by_argpos():
-                if parameter.has_ctrl():
-                    preconds = parameter.preconds()
-                    all_preconds_true = self._eval_precond(preconds, build_log)
-                    if all_preconds_true:
-                        ctrls = parameter.get_ctrls()
-                        for crtl in ctrls:
-                            pass
-                    else:
-                        return True
-                  
+
                   
     def build_command(self):
         """
@@ -188,9 +216,10 @@ class CommandBuilder(object):
                     _log.error(msg)
                 
         with BuildLogger(self._build_log_file_name) as build_log:
-            build_log.debug('##################\n# build command #\n##################')
+            build_log.debug('#################\n# build command #\n#################')
             command_is_insert = False
             for parameter in program.inputs_list_by_argpos():
+                build_log.debug("------ parameter {0} ------".format(parameter.name))
                 arg_pos = parameter.argpos
                 if arg_pos >= 0 and not command_is_insert:
                     command = program.command
@@ -206,7 +235,7 @@ class CommandBuilder(object):
                             build_log.error(msg)
                             raise MobyleError(msg)
                  
-                vdef_data = parameter.default_value()
+                vdef_data = parameter.default_value
                 vdef = self._pre_process_data(vdef_data)
                 self._evaluator['vdef'] = vdef
                 build_log.debug("vdef = {0}".format(vdef))
@@ -215,7 +244,7 @@ class CommandBuilder(object):
                 self._evaluator['value'] = value
                 build_log.debug("value = {0}".format(value))
                 try:
-                    preconds = parameter.preconds()
+                    preconds = parameter.preconds
                 except MobyleError, err:
                     close_paramfiles()
                     raise
@@ -227,11 +256,11 @@ class CommandBuilder(object):
                 if parameter.has_format():
                     format_ = parameter.format
                     try:
-                        build_log.debug("format = {0}".format(format_))
-                        cmd_chunk = eval(format, self._evaluator)
+                        build_log.debug("format = {0} , type = {1}".format(format_, type(format_)))
+                        cmd_chunk = eval(format_, self._evaluator)
                         build_log.debug("cmd_chunk = {0}".format(cmd_chunk))
                     except Exception as err:
-                        msg = "ERROR during evaluation of program {0}: parameter {1} : format {2} err {3}".format(program.name,
+                        msg = "ERROR during evaluation of program {0}: parameter {1} : format {2} err {3}".format(program['name'],
                                                                                                                   parameter.name,
                                                                                                                   format_,
                                                                                                                   err)
@@ -264,10 +293,10 @@ class CommandBuilder(object):
             #trim multi espaces tab , ...
             command_line = ' '.join(command_line.split())
             command_line.strip()
-            command_line.replace( '"','\\"' )
-            command_line.replace( '@','\@' )
-            command_line.replace( '_SQ_',"\'" )
-            command_line.replace( '_DQ_','\"' )
+            command_line = command_line.replace('"','\\"')
+            command_line = command_line.replace('@','\@')
+            command_line = command_line.replace('_SQ_',"\'")
+            command_line = command_line.replace('_DQ_','\"')
             build_log.debug("command line return = {0}".format(command_line))
         return command_line
 

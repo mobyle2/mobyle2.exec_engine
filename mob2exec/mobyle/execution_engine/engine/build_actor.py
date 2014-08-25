@@ -70,25 +70,30 @@ class BuildActor(Actor):
             mandatory_checked = cb.check_mandatory()
         except UserValueError as err:
             job.status.state = Status.ERROR
-            
+            job.message = str(err)
         except MobyleError as err:
             job.status.state = Status.ERROR
+            job.message = str(err)
         try:
             ctrls_checked = cb.check_ctrls()
         except UserValueError as err:
             job.status.state = Status.ERROR
+            job.message = str(err)
         except MobyleError as err:
             job.status.state = Status.ERROR
+            job.message = str(err)
         try:
             cmd_line = cb.build_command() 
             job.cmd_line = cmd_line
         except MobyleError as err:
             job.status.state = Status.ERROR
+            job.message = str(err)
         try:
             job_env =  cb.build_env()
             job.cmd_env = job_env
         except MobyleError as err:
             job.status.state = Status.ERROR
+            job.message = str(err)
         if not err:
             job.status.state = Status.TO_BE_SUBMITTED
         job.save()

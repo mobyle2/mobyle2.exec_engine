@@ -280,7 +280,28 @@ class TestCommandBuilder(unittest.TestCase):
         cl = cb.build_command()
         self.assertEqual(cl, 'echo -n -e hello world')
         
+    def test_build_env(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        job.process_inputs(parameter_values)
+        job.save()
+        cb = CommandBuilder(job)
+        build_env = cb.build_env()
+        self.assertDictEqual(build_env, {})
         
+        env_send = {'VARIABLE': 'value',
+                    'PATH': 'path/to/insert/first'}
+        self.program['env'] = env_send
+        self.program.save()
+        build_env = cb.build_env()
+        self.assertDictEqual(build_env, {'VARIABLE': 'value',
+                                         'PATH' : '{0}:{1}'.format(env_send['PATH'], os.environ['PATH'])
+                                         })
         
         
         

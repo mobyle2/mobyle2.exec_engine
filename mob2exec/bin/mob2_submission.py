@@ -44,6 +44,10 @@ from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
 from mobyle.common.job_routing_model import ExecutionRoutes
 
+from mobyle.common.service import *
+from mobyle.common.type import *
+
+
 cmdlines = {
         1 : { 'name':'blast', 
              'cmd_line': 'blastall -p blastp -d uniprot_sprot -i abcd2_mouse.fa -e 0.1 -o blast2.txt',
@@ -115,14 +119,91 @@ def push_routes_in_db(conf_map):
     _map.save()   
 
     
+def program_generator():
+    programs = []
+    
+    program_1 = connection.Program()
+    program_1['name'] = 'echo'  
+    program_1['command'] = 'echo '
+    inputs = InputParagraph()
+    outputs = OutputParagraph()
+    program_1['inputs'] = inputs
+    program_1['outputs'] = outputs
+
+    input_string = InputProgramParameter()
+    input_string['name'] = 'string'
+    input_string['argpos'] = 99
+    input_string['format'] = '" " + value'
+    input_string['mandatory'] = True
+    input_string_type = StringType()
+    input_string['type'] = input_string_type
+
+    input_first = InputProgramParameter()
+    input_first['name'] = 'string'
+    input_first['argpos'] = -10
+    input_first['format'] = '"ln -s toto titi && "'
+    input_first_type = StringType()
+    input_first['type'] = input_first_type
+
+    input_options = InputProgramParagraph()
+
+    input_options['argpos'] = 2
+    input_n = InputProgramParameter()
+    # n has no argpos, its argpos will be 2
+    input_n['type'] = BooleanType()
+    input_n['name'] = 'n'
+    input_n['format'] = '" -n " if value else ""'
+    input_options['children'].append(input_n)
+
+    # e has an argpos of 3
+    input_e = InputProgramParameter()
+    input_e['type'] = BooleanType()
+    input_e['argpos'] = 3
+    input_e['name'] = 'e'
+    input_e['format'] = '" -e " if value else ""'
+    input_e['precond'] = {'n': True}
+    input_options['children'].append(input_e)
+
+    program_1['inputs']['children'].append(input_string)
+    program_1['inputs']['children'].append(input_first)
+    program_1['inputs']['children'].append(input_options)    
+
+    output_stdout = OutputProgramParameter()
+    output_stdout['name'] = 'stdout'
+    output_stdout['output_type'] = 'stdout'
+    output_stdout_type = FormattedType()
+    output_stdout['type'] = output_stdout_type
+    program_1['outputs']['children'].append(output_stdout)
+    program_1.save()
+    
+    print "type program_1 = ", type(program_1)
+    
+    programs.append((program_1, {'string':'"hello world"', 'e': True, 'n': True}))
+    programs.append((program_1, {'string':'"hello world"'}))
+    programs.append((program_1, {'e': True, 'n': True}))            
+    programs.append((program_1, {'string':'"hello world"', 'n':True}))
+    programs.append((program_1, {'string':'"hello world"', 'e': True}))
+    
+    def get_program():
+        return random.choice(programs)
+    
+    return get_program
+
+get_program = program_generator()
+
 def put_new_job_in_db(name, cmd_line, project ):
     job = connection.ProgramJob()
     job.project = project.id 
     job.name = name
     job.status = Status(Status.TO_BE_BUILT)
     job.owner = {'id': project.id, 'klass': 'Project'}
-    job.cmd_line = cmd_line
+    program, parameter_values = get_program()
+    print "type program = {0}  parameter_values = {1}".format(type(program), parameter_values)
+    job['service'] = program
+    job['inputs'] = {}
+    job.process_inputs(parameter_values)
     job.save()
+ 
     print("put new job {0} in db".format(job.id))
                     
 def clean_dirs():

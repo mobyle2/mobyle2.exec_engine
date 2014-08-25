@@ -17,7 +17,7 @@ from mobyle.common.job import ProgramJob
 from mobyle.common.service import *
 from mobyle.common.type import *
 from mobyle.common.mobyleError import MobyleError, UserValueError
-from mobyle.execution_engine.engine.command_builder import CommandBuilder, BuildLogger
+from mobyle.execution_engine.command_builder import CommandBuilder, BuildLogger
 
 
 class TestCommandBuilder(unittest.TestCase):

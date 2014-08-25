@@ -14,7 +14,8 @@ import setproctitle
 import os
 
 from mobyle.common.job import Status       
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.mobyleError import MobyleError, UserValueError
+from ..command_builder import CommandBuilder
 from .actor import Actor
 
 class BuildActor(Actor):
@@ -47,7 +48,7 @@ class BuildActor(Actor):
         os.chdir(job.dir)
         
         #import data needed for the job
-        
+       
         #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
         
@@ -63,7 +64,33 @@ class BuildActor(Actor):
         #acc_log.info( "test access log {0}".format(self._name))
         
         #the monitor is now aware of the new status
-        job.status.state = Status.TO_BE_SUBMITTED
+        
+        cb = CommandBuilder(job)
+        try:
+            mandatory_checked = cb.check_mandatory()
+        except UserValueError as err:
+            job.status.state = Status.ERROR
+            
+        except MobyleError as err:
+            job.status.state = Status.ERROR
+        try:
+            ctrls_checked = cb.check_ctrls()
+        except UserValueError as err:
+            job.status.state = Status.ERROR
+        except MobyleError as err:
+            job.status.state = Status.ERROR
+        try:
+            cmd_line = cb.build_command() 
+            job.cmd_line = cmd_line
+        except MobyleError as err:
+            job.status.state = Status.ERROR
+        try:
+            job_env =  cb.build_env()
+            job.cmd_env = job_env
+        except MobyleError as err:
+            job.status.state = Status.ERROR
+        if not err:
+            job.status.state = Status.TO_BE_SUBMITTED
         job.save()
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     

@@ -9,7 +9,7 @@ branches:
 # command to install dependencies
 install: 
 - "pip install mf"
-- "pip install git+https://github.com/mobyle2/mongokit@master#egg=mongokit"
+- "pip install --upgrade git+https://github.com/mobyle2/mongokit@master#egg=mongokit"
 - "pip install py-bcrypt mf pygeoip pairtree gitpython==0.3.2.RC1 python-ldap"
 - "pip install git+https://github.com/mobyle2/mobyle2.lib.git@develop#egg=mobyle.lib"
 - "pip install coverage"

@@ -35,7 +35,7 @@ config = Config( os.path.abspath(args.cfg_file))
 from mobyle.common.connection import connection
 
 from mobyle.common.job import Status
-from mobyle.common.job import ClJob
+from mobyle.common.job import ProgramJob
 
 
 all_jobs = connection.Job.find({})

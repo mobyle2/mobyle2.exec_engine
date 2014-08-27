@@ -16,88 +16,18 @@ import random
 from itertools import izip
 
 from mobyle.common.config import Config
-config = Config('/home/bneron/Mobyle/2.0/mobyle2.web/development.ini')
-
+config = Config('/home/bneron/Mobyle/2.0/mobyle2.conf/mobyle.ini')
 from mobyle.common.connection import connection
 from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ClJob
+from mobyle.common.job_routing_model import ExecutionSystem
+from mobyle.common.job_routing_model import ExecutionRoutes
 
 from mobyle.common.mobyleError import MobyleError  
-from mobyle.execution_engine.systems.execution_system import load_execution_classes
-from mobyle.execution_engine.job_routing.route import Rule, Route, Dispatcher
+
     
-    
-conf = { "execution_systems" : [{"name" : "big_one",
-                              "class" : "OgsDRMAA",
-                              "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
-                                               "cell" : '/usr/local/sge',
-                                               "root" : 'default', 
-                                               },
-                                "native_specifications": " -q mobyle-long " 
-                                },
-                                {"name" : "small_one",
-                                 "class" : "OgsDRMAA", 
-                                 "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
-                                                  "cell" : '/usr/local/sge',
-                                                  "root" : 'default' 
-                                                  },
-                                 "native-options": " -q mobyle-small " 
-                                 },
-                                {"name" : "cluster_two",
-                                 "class" : "TorqueDRMAA", 
-                                 "drm_options" : {"drmaa_library_path" : "path/to/torque/libdrmaa.so",
-                                                  "server_name" : "localhost" 
-                                                  },
-                                 "native_specifications": " -q mobyle-small " 
-                                 },
-                                {"name" : "local",
-                                 "class" : "Local",
-                                 "native_specifications" : " nice -n 18 "
-                                 }],
-            
-                "map": [ ("route_1", {"rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
-                                                                              "parameters" : {"name": "Filochard"}}],
-                                      "exec_sys" : "big_one" 
-                                      }),
-                         ("route_2", {"rules" : [{"name" : "project_match",
-                                                  "parameters" : {"name": "dans le cambouis"}} ],
-                                      "exec_sys" : "small_one" 
-                                      }),
-                         ("default", {"rules" : [],
-                                      "exec_sys" : "cluster_two" 
-                                      })
-                        ]
-               } 
-            
-exec_klass = load_execution_classes()
-exec_systems = {}
-for exec_conf in conf["execution_systems"]:
-    try:
-        klass = exec_klass[exec_conf["class"]]
-    except KeyError, err:
-        raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
-    opts = exec_conf["drm_options"] if "drm_options" in exec_conf else {}
-    opts.update({"native_specifications" : exec_conf["native_specifications"]} if "native_specifications" in exec_conf else {})
-    try:
-        exec_systems[exec_conf["name"]] = klass( exec_conf["name"], **opts )
-    except Exception, err:
-        print exec_conf["name"]
-        print opts
-        print err
-
-dispatcher = Dispatcher()
-
-for route_conf in conf["map"]:
-    rules = []
-    for rule_conf in route_conf[1]["rules"]:
-        rule = Rule(rule_conf["name"], parameters = rule_conf["parameters"] if "parameters" in rule_conf else {})
-        rules.append(rule)
-    exec_sys = exec_systems[route_conf[1]["exec_sys"]]
-    route = Route(route_conf[0], exec_systems, rules )
-    dispatcher.append(route)
-
 
 def clean_db():
     old_jobs = connection.Job.find({})
@@ -111,6 +41,20 @@ def clean_db():
     old_projects = connection.Project.find({})
     for obj in old_projects:
         obj.delete()
+    
+    try:
+        old_exec_sys = connection.ExecutionSystem.find({})
+        for obj in old_exec_sys:
+            obj.delete()
+    except AttributeError:
+        print >> sys.stderr, "collection ExecutionSystem not found"
+        
+    try:
+        old_routes = connection.ExecutionRoutes.find({})
+        for obj in old_routes:
+            obj.delete()
+    except AttributeError:
+        print >> sys.stderr, "collection ExecutionRoutes not found"   
         
 def create_user(name):
     user = connection.User()
@@ -134,6 +78,25 @@ def create_job(name, project ):
     job.save()
     return job
 
+def push_exec_sys_in_db(conf):
+    exec_sys = connection.ExecutionSystem()
+    exec_sys['_id'] = conf['_id']
+    exec_sys['class'] = conf['class']
+    if "drm_options" in conf:
+        exec_sys["drm_options"] = conf["drm_options"]
+    if "native_specifications" in conf:
+        exec_sys["native_specifications"] = conf["native_specifications"]
+    exec_sys.save()
+    
+        
+def push_routes_in_db(conf_map):
+    _map = connection.ExecutionRoutes()
+    _map["map"] = conf_map
+    _map.save()   
+
+
+################### Preparation ##########################
+
 clean_db()
 
 pieds_nickeles = {}
@@ -143,9 +106,68 @@ p_str = ('organisateurs de voyage', 'dans le cambouis', "l'Opération congélati
 for u_name ,p_name  in izip(name_str, p_str):
     pieds_nickeles[u_name] = create_user(u_name)
     projects.append(create_project(pieds_nickeles[u_name], p_name))
-              
+      
+      
+conf = { "execution_systems" : [{"_id" : "big_one",
+                              "class" : "OgsDRMAA",
+                              "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                               "cell" : '/usr/local/sge',
+                                               "root" : 'default', 
+                                               },
+                                "native_specifications": " -q mobyle-long " 
+                                },
+                                {"_id" : "small_one",
+                                 "class" : "OgsDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/sge/libdrmaa.so",
+                                                  "cell" : '/usr/local/sge',
+                                                  "root" : 'default' 
+                                                  },
+                                 "native_specifications": " -q mobyle-small " 
+                                 },
+                                {"_id" : "cluster_two",
+                                 "class" : "TorqueDRMAA", 
+                                 "drm_options" : {"drmaa_library_path" : "path/to/torque/libdrmaa.so",
+                                                  "server_name" : "localhost" 
+                                                  },
+                                 "native_specifications": " -q mobyle-small " 
+                                 },
+                                {"_id" : "local",
+                                 "class" : "Local",
+                                 "native_specifications" : " nice -n 18 "
+                                 }],
+            
+                "map": [ {"name": "route_1", 
+                          "rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
+                                                                   "parameters" : {"name": "Filochard"}
+                                                                   }
+                                     ],
+                          "exec_system" : "big_one" 
+                                      },
+                         {"name" :"route_2",
+                          "rules" : [{"name" : "project_match", "parameters" : {"name": "dans le cambouis"}} ],
+                          "exec_system" : "small_one" 
+                         },
+                         {"name" : "default",
+                          "rules" : [],
+                          "exec_system" : "cluster_two" 
+                          }
+                        ]
+               }
+               
+               
+for exec_sys in conf["execution_systems"]:
+    push_exec_sys_in_db(exec_sys)
+
+push_routes_in_db(conf["map"])
+
+############## Test #####################################
+#from mobyle.execution_engine.systems.execution_system import load_execution_classes
+#from mobyle.execution_engine.job_routing.route import Rule, Route, Dispatcher
+#from mobyle.execution_engine.job_routing.route import Dispatcher
+from mobyle.execution_engine.job_routing.route import get_dispatcher
 
 recieved_routes = []    
+dispatcher = get_dispatcher()
 
 for i in range(0, 3):
     job = create_job(name_str[i], projects[i])

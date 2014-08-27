@@ -24,8 +24,6 @@ except ImportError:
     raise ImportError("mobyle.execution_engine must be in PYTHONPATH or MOBYLE_HOME must be defined in environment")
 
 import logging.config
-from conf.logger import server_log_config
-
 import multiprocessing
 import threading
 import time
@@ -56,7 +54,6 @@ write them on log files.
         self.mon_q = None
         self.jt_monitor = None
         self.db_q = None
-        self.db_mgr = None
         
         self._running = False
         
@@ -94,7 +91,7 @@ write them on log files.
                                                  'level'   : self.cfg.get('mob2exec','log_email_level'),
                                                  },
                                           },  
-                             'loggers': { '': {
+                             'loggers': { 'mobyle': {
                                               'handlers': ['error', 'email'] ,
                                               'level': 'NOTSET'
                                         }
@@ -103,10 +100,8 @@ write them on log files.
         
         logging.config.dictConfig(server_log_config)
         
-        from mobyle.core.logger import LogRecordSocketReceiver
-        from mobyle.execution_engine.engine.jobstable import JobsTable    
+        from mobyle.execution_engine.logger import LogRecordSocketReceiver
         from mobyle.execution_engine.engine.monitor import JtMonitor
-        from mobyle.execution_engine.engine.db_manager import DBManager
        
         try:
             self.log_receiver = LogRecordSocketReceiver()
@@ -115,26 +110,20 @@ write them on log files.
             sys.exit(msg)
         self.log_server_thread = threading.Thread(target = self.log_receiver.serve_forever)   
         self.log_server_thread.start()
-        self._log = logging.getLogger(__name__)
+        self._log = logging.getLogger('mobyle.{0}'.format(__name__))
         
-        self.jt = JobsTable()
         self.mon_q = multiprocessing.Queue()
-        self.mon = JtMonitor(self.jt, self.mon_q)
+        self.mon = JtMonitor(self.mon_q, cfg)
         self.db_q = multiprocessing.Queue()
-        self.db_mgr = DBManager(self.jt, self.db_q)
         self.mon.start()
-        self.db_mgr.start()
         
         while self._running:
             self._log.debug("{0} is in while {1:f}".format(self._name, time.time()))
+            
             if not self.mon.is_alive():
                 self._log.warning("{0} the Monitor is dead I restart one".format(self._name))
-                self.mon = JtMonitor(self.jt, self.mon_q)
+                self.mon = JtMonitor(self.mon_q, cfg)
                 self.mon.start()
-            if not self.db_mgr.is_alive():
-                self._log.warning("{0} the DBManager is dead I restart one".format(self._name))
-                self.db_mgr = DBManager(self.jt, self.db_q)
-                self.db_mgr.start()                
             time.sleep(5)
         self.mon.join()
         
@@ -147,9 +136,6 @@ write them on log files.
         self._log.debug("put {0} in monitor Q".format(cmd))
         self.mon_q.put(cmd)
         self.mon.join()
-        self._log.debug("put {0} in DbManager Q".format(cmd))
-        self.db_q.put(cmd)
-        self.db_mgr.join()
         self._log.debug("shutdown logger server") 
         self.log_receiver.shutdown()
         self.log_server_thread.join()    
@@ -158,7 +144,6 @@ write them on log files.
         self._log.debug("{0} recieved reload".format(self._name)) 
         cmd = 'RELOAD'
         self.mon_q.put(cmd)
-        self.db_q.put( cmd )
             
             
 if __name__ == '__main__':
@@ -211,7 +196,8 @@ reload : to reload he configuration file without stopping the daemon (not implem
             print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     
-    lock_file = cfg.get("mob2exec","pid_file")     
+    lock_file = cfg.get("mob2exec","pid_file")  
+    print >> sys.stderr, "pid file = {0}".format(lock_file)
     #####################
     #                   #
     # start the daemon  #

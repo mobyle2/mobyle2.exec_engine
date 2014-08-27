@@ -20,7 +20,8 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status, ClJob
+from mobyle.common.job import Status, ProgramJob, Job
+from mobyle.common.job_routing_model import ExecutionRoutes
 
 from mobyle.common.mobyleError import MobyleError
 from mobyle.execution_engine.job_routing.route  import Rule
@@ -41,9 +42,29 @@ class RuleTest(unittest.TestCase):
                            "always_false" : always_false,
                            "normand" : normand,
                            }
+        conf = { 
+                "map": [ {"name": "route_1", 
+                          "rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
+                                                                   "parameters" : {"name": "Filochard"}
+                                                                   }
+                                     ],
+                          "exec_system" : "big_one" 
+                                      },
+                         {"name" :"route_2",
+                          "rules" : [{"name" : "project_match", "parameters" : {"name": "dans le cambouis"}} ],
+                          "exec_system" : "small_one" 
+                         },
+                         {"name" : "default",
+                          "rules" : [],
+                          "exec_system" : "cluster_two" 
+                          }
+                        ]
+               }
+        self.push_routes_in_db(conf["map"])
+        
         
     def tearDown(self):
-        objects = connection.ClJob.find({})
+        objects = connection.Job.find({})
         for obj in objects:
             obj.delete()
         objects = connection.User.find({})
@@ -52,7 +73,19 @@ class RuleTest(unittest.TestCase):
         objects = connection.Project.find({})
         for obj in objects:
             obj.delete()
+        try:
+            objects = connection.ExecutionRoutes.find({})
+            for obj in objects:
+                obj.delete()
+        except AttributeError:
+            pass
+    
             
+    def push_routes_in_db(self, conf_map):
+        _map = connection.ExecutionRoutes()
+        _map["map"] = conf_map
+        _map.save()   
+    
     def test_creation(self):
         rule = Rule("always_true")
         self.assertTrue(isinstance(rule, Rule))
@@ -71,7 +104,7 @@ class RuleTest(unittest.TestCase):
         
         status = Status(Status.INIT)
         
-        job = connection.ClJob()
+        job = connection.ProgramJob()
         job.project = project.id
         job.name = "first job"
         job.status = status

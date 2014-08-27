@@ -24,3 +24,10 @@ build/
 dist/
 docs/_build/
 mob2exec/mobyle/common
+
+##################################
+# The files generate by coverage #
+##################################
+
+tests/.coverage
+tests/htmlcov

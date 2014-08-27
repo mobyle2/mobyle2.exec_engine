@@ -23,6 +23,7 @@ def alacon_ter(job):
 
 @rules.register
 def user_is_local(job):
+    p = connection.Project.find_one({'_id': job.project})
     return job.name == 'Filochard'   
     
 @rules.register
@@ -35,5 +36,6 @@ from mobyle.common.project import Project
 
 @rules.register
 def project_match(job, name = None):
-    p = connection.Project.find_one({'_id': job.project})
-    return p['name'] == name
+    
+    project = job.get_project()
+    return project['name'] == name

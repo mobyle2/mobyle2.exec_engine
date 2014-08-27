@@ -16,5 +16,6 @@ from execution_system import register
 class TorqueDRMAA(DRMAA):
     
     def __init__(self, name, drmaa_library_path = None, server_name = None, native_specifications = ""):
-        super(TorqueDRMAA, self).__init__(drmaa_library_path, native_specifications = native_specifications)
+        #super(TorqueDRMAA, self).__init__(name, drmaa_library_path, native_specifications = native_specifications)
+        DRMAA.__init__(self, name, drmaa_library_path, native_specifications = native_specifications)
         self.contactString = server_name

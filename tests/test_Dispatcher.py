@@ -19,7 +19,7 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status, ClJob
+from mobyle.common.job import Status, ProgramJob, Job
 
 from mobyle.common.mobyleError import MobyleError
 from mobyle.execution_engine.job_routing.route import Rule
@@ -53,28 +53,28 @@ class DispatcherTest(unittest.TestCase):
         
         status = Status(Status.INIT)
         
-        self.job_1 = connection.ClJob()
+        self.job_1 = connection.ProgramJob()
         self.job_1.project = project.id
         self.job_1.name = "first job"
         self.job_1.status = status
         self.job_1.owner = {'name': 'truc'}
         self.job_1.save()
         
-        self.job_2 = connection.ClJob()
+        self.job_2 = connection.ProgramJob()
         self.job_2.project = project.id
         self.job_2.name = "2nd job"
         self.job_2.status = status
         self.job_2.owner = {'name': 'bidule'}
         self.job_2.save()
         
-        self.job_3 = connection.ClJob()
+        self.job_3 = connection.ProgramJob()
         self.job_3.project = project.id
         self.job_3.name = "first job"
         self.job_3.status = status
         self.job_3.owner = {'name': 'bidule'}
         self.job_3.save()
         
-        self.job_4 = connection.ClJob()
+        self.job_4 = connection.ProgramJob()
         self.job_4.project = project.id
         self.job_4.name = "foo"
         self.job_4.status = status

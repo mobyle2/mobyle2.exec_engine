@@ -9,58 +9,60 @@
 # @license: GPLv3
 #===============================================================================
 
-import logging
 import logging.config
-from conf.logger import client_log_config
-
-import multiprocessing
 import setproctitle
 
-from mobyle.common.job import Status       
+from mobyle.common.job import Status
+from ..job_routing.route import get_dispatcher
+from .actor import Actor
 
-class SubmitActor(multiprocessing.Process):
+class SubmitActor(Actor):
     """
     submit job to the execution system.
     """
     
 
-    def __init__(self, table, job_id ):
+    def __init__(self, job_id, log_conf):
         """
-        :param table: the container shared by all containing all :class:`lib.execution_engine.job.Job` alive in the system
-        :type table: :class:`lib.execution_engine.jobstable.JobsTable` instance 
         :param job_id: the id of the job to treat
         :type job_id: string
         
         """
-        super(SubmitActor, self).__init__()
-        self._log = None
-        self.table = table  
-        self.job_id = job_id
+        super(SubmitActor, self).__init__(job_id, log_conf)
+
            
     def run(self):
         self._name = "SubmitActor-{:d}".format(self.pid)
         setproctitle.setproctitle('mob2_submit')
         
-        job = self.table.get(self.job_id )
-        job.status.state = Status.SUBMITTING
-        self.table.put(job)
-        
-        logging.config.dictConfig(client_log_config)
+        logging.config.dictConfig(self._log_conf)
         self._log = logging.getLogger(__name__) 
+        
+        job = self.get_job()
+        job.status.state = Status.SUBMITTING
+        job.save()
+        
         ###################### 
         
         # here the code to submit a job
+        dispatcher = get_dispatcher()
+        route = dispatcher.which_route(job)
+        exec_system = route.exec_sys
         
-        ######################  
+        project = job.get_project()
+        self._log.info( u"{0} job {1} (project = {2} ) has route {3}".format(self._name, job.id, project['name'], route.name))
+        self._log.info( u"{0} job {1} use exec system {2}".format(self._name, job.id, exec_system.name))
+        #####################  
         #
-        # recuperer la classe d'executon pour ce job
-        #   
-        # faire run
+        job.execution.exec_system_id = exec_system.name
+        # submit the job
+        import random
+        job.execution.job_no = str(random.randint(1,1000))
+        job.save()
+        
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
-        acc_log = logging.getLogger('access')
-        acc_log.info("test access log {0}".format(self._name))
         
         job.status.state = Status.SUBMITTED
-        self.table.put(job)
+        job.save()
         
         

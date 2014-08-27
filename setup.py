@@ -180,10 +180,9 @@ setup( distclass = UsageDistribution,
                      'mobyle.execution_engine.engine',
                      'mobyle.execution_engine.job_routing',
                      'mobyle.execution_engine.systems',
-                     'conf'
                      ],
       package_dir = {'': 'mob2exec'},
-      scripts     = [ 'mob2exec/bin/mob2execd' ] ,
+      scripts     = [ 'mob2exec/bin/mob2execd', 'mob2exec/bin/mob2_submission.py', 'mob2exec/bin/mob2_check_db.py'] ,
       cmdclass= { 'build' : check_and_build,
                   'test': test }
       )

@@ -52,7 +52,7 @@ from mobyle.common.connection import connection
 from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status
-from mobyle.common.job import ClJob
+from mobyle.common.job import ProgramJob
 
 
 def clean_db(connection):

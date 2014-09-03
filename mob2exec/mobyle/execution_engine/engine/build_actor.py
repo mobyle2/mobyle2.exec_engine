@@ -111,7 +111,7 @@ class BuildActor(Actor):
             job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
         except Exception, err:
             msg = "cannot build  the job dir the database may be corrupted project dir: {},  job id: {}".format(project.dir, job.id)
-            self._log.critical(msg)
+            self._log.critical(msg, exc_info=True)
             raise MobyleError(msg)
         if os.path.exists(job_dir):
                 msg = 'cannot make job directory: {0} already exists'.format(job_dir)

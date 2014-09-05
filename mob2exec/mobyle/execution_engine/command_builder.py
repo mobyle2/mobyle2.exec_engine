@@ -142,12 +142,12 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('##################\n# check control #\n##################') 
             for parameter in program.inputs_list_by_argpos():
-                if parameter.has_ctrl():
+                if parameter.has_ctrls():
                     preconds = parameter.preconds
                     all_preconds_true = self._eval_precond(preconds, build_log)
                     if all_preconds_true:
-                        ctrls = parameter.get_ctrls()
-                        for crtl in ctrls:
+                        ctrls = parameter.ctrls
+                        for ctrl in ctrls:
                             evaluated_ctrl = eval_bool.test(ctrl)
                             build_log.debug("ctrl = '{0}' => {1}".format(ctrl, evaluated_ctrl))
                             if not evaluated_ctrl:

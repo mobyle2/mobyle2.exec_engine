@@ -102,6 +102,7 @@ class CommandBuilder(object):
             for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 value_data = self.job.get_input_value(parameter.name)
+                #build_log.debug(parameter.name, value_data)
                 build_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
                     # if there is no vdef default_value return None

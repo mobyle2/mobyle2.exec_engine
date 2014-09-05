@@ -75,7 +75,7 @@ class BuildActor(Actor):
             job.status.state = Status.ERROR
             job.message = str(err)
         try:
-            ctrls_checked = cb.check_ctrls()
+            ctrls_checked = cb.check_ctrl()
         except UserValueError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
@@ -94,7 +94,7 @@ class BuildActor(Actor):
         except MobyleError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
-        if not err:
+        if job.status.state!=Status.ERROR:
             job.status.state = Status.TO_BE_SUBMITTED
         job.save()
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))

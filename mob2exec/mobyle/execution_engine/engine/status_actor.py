@@ -47,7 +47,7 @@ class StatusActor(Actor):
         job.status.state = Status.UPDATING
         job.save()
         
-        exec_system_id = str(job.execution.exec_system_id)
+        exec_system_id = str(job.execution_system_id)
         exec_system = self.get_execution_system(exec_system_id)
         
         self._log.debug( "{0} job {1} was submit with exec sytem {2} and have n° {3}".format(self._name, 

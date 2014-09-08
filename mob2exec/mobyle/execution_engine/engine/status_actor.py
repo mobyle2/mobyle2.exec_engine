@@ -53,7 +53,7 @@ class StatusActor(Actor):
         self._log.debug( "{0} job {1} was submit with exec sytem {2} and have n° {3}".format(self._name, 
                                                                                              self.job_id,
                                                                                              exec_system.name,
-                                                                                             job.execution.job_no))
+                                                                                             job.execution_job_no))
         ####################### BOUCHON ###############################
         if old_status == Status.SUBMITTED:
             job.status.state = (Status.RUNNING, Status.PENDING, Status.HOLD)[random.randint(0, 2)]

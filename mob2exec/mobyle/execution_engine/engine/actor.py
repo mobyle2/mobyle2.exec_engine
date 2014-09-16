@@ -16,7 +16,7 @@ from abc import ABCMeta, abstractmethod
 from mobyle.common.connection import connection
 from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
-from mobyle.common.mobyleError import InternalError
+from mobyle.common.error import InternalError
 from mobyle.execution_engine.systems.execution_system import load_execution_classes
 
 

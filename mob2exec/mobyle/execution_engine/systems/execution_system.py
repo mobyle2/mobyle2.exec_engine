@@ -14,7 +14,7 @@ import sys
 import os
 import glob
 
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import InternalError
 
 class ExecutionSystem(object):
     
@@ -25,19 +25,44 @@ class ExecutionSystem(object):
         self.name = name
         
     @abstractmethod   
-    def run(self):
+    def run(self, job):
+        """
+        run a job asynchronously on the execution system.
+        :param job: the job to run.
+        :type job: :class:`mobyle.common.job.Job` object.
+        """
         pass
     
     @abstractmethod 
     def get_status(self, job):
+        """
+        query the execution system to get the status of a job
+        translate it in Mobyle Status and update the DB
+        
+        :param job: the job to query the status
+        :type job: :class:`mobyle.common.job.Job` object.
+        :return: the status of the job.
+        :rtype: :class:`mobyle.common.job.Status` object.
+        """
         pass
     
     @abstractmethod 
     def kill(self, job):
+        """
+        ask to the execution to terminate a job, and updated it in DB
+        
+        :param job: the job to kill.
+        :type job: :class:`mobyle.common.job.Job` object.
+        """
         pass
     
 
 def make_register():  
+    """
+    closure to embed klass_registery, module_imported data structure
+    in function register and load_execution_classes but avoid to
+    expose them at the global level
+    """
       
     klass_registery = {}
     module_imported = {}
@@ -45,6 +70,7 @@ def make_register():
     def register(klass):
         """
         decorator which register a class as an available ExcutionSystem class
+        
         ..note ::
           from execution_system import ExecutionSystem
           
@@ -61,9 +87,9 @@ def make_register():
         
         """
         if not issubclass(klass, ExecutionSystem):
-            raise MobyleError("{0} does not inherits from ExecutionSystem".format(klass.__name__))
+            raise InternalError("{0} does not inherits from ExecutionSystem".format(klass.__name__))
         if inspect.isabstract(klass):
-            raise MobyleError("{0} is still abstract, it must implements run, get_status, kill")
+            raise InternalError("{0} is still abstract, it must implements run, get_status, kill")
         klass_registery[klass.__name__] = klass
         return klass
         

@@ -151,7 +151,7 @@ if __name__ == '__main__':
     import signal
     import lockfile.pidlockfile
     import daemon
-    from mobyle.common.mobyleError import MobyleError
+    from mobyle.common.error import ConfigError
     
     parser = argparse.ArgumentParser(description = "mob2exec is the execution engine of mobyle2")
     parser.add_argument("cmd",
@@ -173,9 +173,9 @@ reload : to reload he configuration file without stopping the daemon (not implem
     from mobyle.common.config import Config
     config_path = os.path.abspath(args.cfg_file)
     if config_path is None:
-        raise MobyleError("no Mobyle config file specified (-c)")
+        raise ConfigError("no Mobyle config file specified (-c)")
     elif not os.path.exists(config_path):
-        raise MobyleError("cannot access {0}: No such file ".format(config_path))
+        raise ConfigError("cannot access {0}: No such file ".format(config_path))
     cfg = Config(config_path).config()
     
     def mob2_pid(lock_file):

@@ -11,13 +11,12 @@
 
 
 import multiprocessing
-import os
 from abc import ABCMeta, abstractmethod
 
 from mobyle.common.connection import connection
 from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.mobyleError import InternalError
 from mobyle.execution_engine.systems.execution_system import load_execution_classes
 
 
@@ -73,7 +72,7 @@ class Actor(multiprocessing.Process):
         try:
             klass = exec_klasses[exec_conf["class"]]
         except KeyError, err:
-            raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
+            raise InternalError('class {0} does not exist check your config'.format(exec_conf["class"]))
         opts = exec_conf["drm_options"]
         if opts is None:
             opts = {}
@@ -85,7 +84,7 @@ class Actor(multiprocessing.Process):
         except Exception, err:
             msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
             self._log.error(msg)
-            raise MobyleError(msg)
+            raise InternalError(msg)
         
         return execution_system
         

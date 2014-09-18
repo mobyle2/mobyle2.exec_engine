@@ -15,7 +15,7 @@ import inspect
 
 #from mongokit import CustomType
 
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import InternalError
 
 
 
@@ -39,10 +39,10 @@ def make_register():
         a rule must have only one argument named job
         """
         if func.func_name in rules:
-            raise MobyleError("there is several rules for routing job named \"{0}\"".format(func.func_name))
+            raise InternalError("there is several rules for routing job named \"{0}\"".format(func.func_name))
         argspec = inspect.getargspec(func)
         if not len(argspec.args) >= 1:
-            raise MobyleError("invalid rules signature. rule need at least 1 a job as first argument".format(func.func_name))
+            raise InternalError("invalid rules signature. rule need at least 1 a job as first argument".format(func.func_name))
         if argspec.args[0] != 'job':
             import warnings
             warnings.warn("rule take a 'job' as parameter, {0} defined with \"{1}\"".format(func.func_name, argspec.args[0]), SyntaxWarning)

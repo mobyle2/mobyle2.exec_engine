@@ -54,10 +54,10 @@ class SubmitActor(Actor):
         self._log.info( u"{0} job {1} use exec system {2}".format(self._name, job.id, exec_system.name))
         #####################  
         #
-        job.execution.exec_system_id = exec_system.name
+        job.execution_system_id = exec_system.name
         # submit the job
         import random
-        job.execution.job_no = str(random.randint(1,1000))
+        job.execution_job_no = str(random.randint(1,1000))
         job.save()
         
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))

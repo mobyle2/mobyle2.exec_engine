@@ -23,7 +23,7 @@ from mobyle.common.project import Project
 from mobyle.common.job import Status, ProgramJob, Job
 from mobyle.common.job_routing_model import ExecutionRoutes
 
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import MobyleError
 from mobyle.execution_engine.job_routing.route  import Rule
 
 class RuleTest(unittest.TestCase):

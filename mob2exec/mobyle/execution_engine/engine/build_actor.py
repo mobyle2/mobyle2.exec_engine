@@ -14,7 +14,7 @@ import setproctitle
 import os
 
 from mobyle.common.job import Status       
-from mobyle.common.mobyleError import MobyleError, UserValueError
+from mobyle.common.error import InternalError, UserValueError
 from ..command_builder import CommandBuilder
 from .actor import Actor
 
@@ -67,34 +67,34 @@ class BuildActor(Actor):
         
         cb = CommandBuilder(job)
         try:
-            mandatory_checked = cb.check_mandatory()
+            cb.check_mandatory()
         except UserValueError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
-        except MobyleError as err:
+        except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
         try:
-            ctrls_checked = cb.check_ctrls()
+            cb.check_ctrl()
         except UserValueError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
-        except MobyleError as err:
+        except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
         try:
             cmd_line = cb.build_command() 
             job.cmd_line = cmd_line
-        except MobyleError as err:
+        except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
         try:
             job_env =  cb.build_env()
             job.cmd_env = job_env
-        except MobyleError as err:
+        except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
-        if not err:
+        if job.status.state != Status.ERROR:
             job.status.state = Status.TO_BE_SUBMITTED
         job.save()
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
@@ -111,17 +111,17 @@ class BuildActor(Actor):
             job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
         except Exception, err:
             msg = "cannot build  the job dir the database may be corrupted project dir: {},  job id: {}".format(project.dir, job.id)
-            self._log.critical(msg)
-            raise MobyleError(msg)
+            self._log.critical(msg, exc_info=True)
+            raise InternalError(msg)
         if os.path.exists(job_dir):
-                msg = 'cannot make job directory: {0} already exists'.format(job_dir)
-                self._log.error(msg)
-                raise MobyleError(msg)
+            msg = 'cannot make job directory: {0} already exists'.format(job_dir)
+            self._log.error(msg)
+            raise InternalError(msg)
         try:
             os.makedirs(job_dir, 0755) #create parent directory
         except Exception , err:
             self._log.critical( "unable to create job directory {0}: {1} ".format(job_dir, err), exc_info = True)
-            raise MobyleError , "Internal server Error"
+            raise InternalError , "Internal server Error"
         os.umask(0022)
         job.dir = job_dir
         

@@ -21,7 +21,6 @@ from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status, ProgramJob, Job
 
-from mobyle.common.mobyleError import MobyleError
 from mobyle.execution_engine.job_routing.route import Rule
 from mobyle.execution_engine.job_routing.route import Route
 from mobyle.execution_engine.job_routing.route import Dispatcher

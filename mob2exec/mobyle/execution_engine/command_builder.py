@@ -16,7 +16,7 @@ import os
 import re
 
 from mobyle.common.data import ListData
-from mobyle.common.mobyleError import MobyleError, UserValueError
+from mobyle.common.error import InternalError, UserValueError
 from mobyle.common.eval_bool import EvalBoolFactory
 
 
@@ -41,7 +41,7 @@ class BuildLogger(object):
         except IOError as err:
             msg = "unable to create file {} for build_log: {}".format(self.file_name, err)
             _log.critical(msg)
-            raise MobyleError("Server Internal Error")
+            raise InternalError("Server Internal Error")
         if self.log is None:
             self.log = logging.getLogger(self.name)
             self.log.setLevel(1)
@@ -102,6 +102,7 @@ class CommandBuilder(object):
             for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 value_data = self.job.get_input_value(parameter.name)
+                #build_log.debug(parameter.name, value_data)
                 build_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
                     # if there is no vdef default_value return None
@@ -123,7 +124,7 @@ class CommandBuilder(object):
                 msg = "ERROR during precond evaluation: {0} : {1}".format(precond, err)
                 _log.error(msg)
                 build_log.debug(msg)
-                raise MobyleError("Internal Server Error")
+                raise InternalError("Internal Server Error")
             build_log.debug("precond = {0} evaluated as  {1}".format(precond, evaluated_precond))
             if not evaluated_precond :
                 all_preconds_true = False
@@ -142,12 +143,12 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('##################\n# check control #\n##################') 
             for parameter in program.inputs_list_by_argpos():
-                if parameter.has_ctrl():
+                if parameter.has_ctrls():
                     preconds = parameter.preconds
                     all_preconds_true = self._eval_precond(preconds, build_log)
                     if all_preconds_true:
-                        ctrls = parameter.get_ctrls()
-                        for crtl in ctrls:
+                        ctrls = parameter.ctrls
+                        for ctrl in ctrls:
                             evaluated_ctrl = eval_bool.test(ctrl)
                             build_log.debug("ctrl = '{0}' => {1}".format(ctrl, evaluated_ctrl))
                             if not evaluated_ctrl:
@@ -197,7 +198,7 @@ class CommandBuilder(object):
         
         :return: the command line
         :rtype: string 
-        :raise MobyleError: if something goes wrong during 'format' evaluation.
+        :raise InternalError: if something goes wrong during 'format' evaluation.
         """
         program = self.job.service
         command_line = ''
@@ -235,7 +236,7 @@ class CommandBuilder(object):
                             msg = 'the parameter {0}.{1} have argpos {2} and no command found'.format(program.name, parameter.name, arg_pos)
                             _log.error(msg)
                             build_log.error(msg)
-                            raise MobyleError(msg)
+                            raise InternalError(msg)
                  
                 vdef_data = parameter.default_value
                 vdef = self._pre_process_data(vdef_data)
@@ -247,7 +248,7 @@ class CommandBuilder(object):
                 build_log.debug("value = {0}".format(value))
                 try:
                     preconds = parameter.preconds
-                except MobyleError, err:
+                except InternalError, err:
                     close_paramfiles()
                     raise
                 all_preconds_true = self._eval_precond(preconds, build_log)    
@@ -269,7 +270,7 @@ class CommandBuilder(object):
                         _log.critical(msg, exc_info = True)
                         build_log.error(msg)
                         close_paramfiles()
-                        raise MobyleError(msg)
+                        raise InternalError(msg)
                     
                     if parameter.has_paramfile():
                         paramfile_name = parameter.paramfile
@@ -280,7 +281,7 @@ class CommandBuilder(object):
                             _log.critical(msg)
                             build_log.error(msg)
                             close_paramfiles()
-                            raise MobyleError(msg)
+                            raise InternalError(msg)
                         
                         if cmd_chunk :
                             paramfile_handle.write(cmd_chunk)

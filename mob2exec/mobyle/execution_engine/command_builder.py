@@ -142,7 +142,7 @@ class CommandBuilder(object):
         program = self.job.service
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('##################\n# check control #\n##################') 
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.parameters_list():
                 if parameter.has_ctrls():
                     preconds = parameter.preconds
                     all_preconds_true = self._eval_precond(preconds, build_log)
@@ -169,7 +169,7 @@ class CommandBuilder(object):
         param_missing_value = []
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('###################\n# check mandatory #\n###################')
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 if not parameter.mandatory:
                     build_log.debug(" not mandatory => next parameter")
@@ -219,7 +219,7 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('#################\n# build command #\n#################')
             command_is_insert = False
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.parameters_list_by_argpos():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 arg_pos = parameter.argpos
                 build_log.debug("arg_pos = {}  command_is_insert = {}".format(arg_pos, command_is_insert))

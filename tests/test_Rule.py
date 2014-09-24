@@ -21,7 +21,7 @@ from mobyle.common.connection import connection
 from mobyle.common.users import User
 from mobyle.common.project import Project
 from mobyle.common.job import Status, ProgramJob, Job
-from mobyle.common.job_routing_model import ExecutionRoutes
+from mobyle.common.job_routing_model import ExecutionRoutes, ExecutionRule
 
 from mobyle.common.error import MobyleError
 from mobyle.execution_engine.job_routing.route  import Rule
@@ -44,14 +44,16 @@ class RuleTest(unittest.TestCase):
                            }
         conf = { 
                 "map": [ {"name": "route_1", 
-                          "rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
-                                                                   "parameters" : {"name": "Filochard"}
-                                                                   }
+                          "rules" : [ExecutionRule({"name" : "user_is_local", 
+                                                    "parameters":None}),
+                                     ExecutionRule({"name" : "job_name_match",
+                                                    "parameters" : {"name": "Filochard"}})
                                      ],
                           "exec_system" : "big_one" 
                                       },
                          {"name" :"route_2",
-                          "rules" : [{"name" : "project_match", "parameters" : {"name": "dans le cambouis"}} ],
+                          "rules" : [ExecutionRule({"name" : "project_match",
+                                                    "parameters" : {"name": "dans le cambouis"}}) ],
                           "exec_system" : "small_one" 
                          },
                          {"name" : "default",

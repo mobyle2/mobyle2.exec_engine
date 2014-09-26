@@ -45,6 +45,7 @@ class BuildActor(Actor):
         job.save()
         
         self.make_job_environement(job)
+        job.import_data()
         os.chdir(job.dir)
         
         #import data needed for the job

@@ -103,6 +103,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -120,6 +121,7 @@ class TestCommandBuilder(unittest.TestCase):
         parameter_values = {'string':'hello world',
                             'e': True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -131,6 +133,7 @@ class TestCommandBuilder(unittest.TestCase):
                             'e': True,
                             'n': True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -149,6 +152,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -157,6 +161,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello @world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -165,6 +170,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'_SQ_hello world_SQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -173,6 +179,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'_DQ_hello world_DQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -191,6 +198,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.check_mandatory()
@@ -198,8 +206,10 @@ class TestCommandBuilder(unittest.TestCase):
         
         #mandatory without value
         job['inputs'] = {}
+        job['exec_inputs'] = {}
         parameter_values = {}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         with self.assertRaises(UserValueError) as context:
@@ -215,6 +225,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"', 'n':True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         with self.assertRaises(UserValueError) as context:
@@ -229,6 +240,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         self.assertTrue(cl)
@@ -251,6 +263,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world', 'e': True, 'n': True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -275,6 +288,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world', 'e': True, 'n': True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -289,6 +303,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world', 'e': True, 'n': True}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         build_env = cb.build_env()

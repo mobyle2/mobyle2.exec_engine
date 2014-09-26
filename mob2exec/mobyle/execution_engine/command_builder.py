@@ -88,7 +88,6 @@ class CommandBuilder(object):
             value = data.expr_value()
         return value
     
-    
     def _fill_evaluator(self, evaluator):
         """
         fill the evaluator with the data value 
@@ -101,7 +100,7 @@ class CommandBuilder(object):
             program = self.job.service
             for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
-                value_data = self.job.get_input_value(parameter.name)
+                value_data = self.job.get_exec_input_value(parameter.name)
                 #build_log.debug(parameter.name, value_data)
                 build_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
@@ -111,7 +110,6 @@ class CommandBuilder(object):
                 build_log.debug('{0} = {1}'.format(parameter.name, value))
                 evaluator[parameter.name] = value
             build_log.debug("evaluator = {0}".format(evaluator))
-            
     
     def _eval_precond(self, preconds, build_log):
         eval_bool = EvalBoolFactory(values = self._evaluator)
@@ -242,7 +240,7 @@ class CommandBuilder(object):
                 vdef = self._pre_process_data(vdef_data)
                 self._evaluator['vdef'] = vdef
                 build_log.debug("vdef = {0}".format(vdef))
-                value_data = self.job.get_input_value(parameter.name)
+                value_data = self.job.get_exec_input_value(parameter.name)
                 value = self._pre_process_data(value_data)
                 self._evaluator['value'] = value
                 build_log.debug("value = {0}".format(value))

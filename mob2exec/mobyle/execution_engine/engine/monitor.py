@@ -120,7 +120,8 @@ class JtMonitor(multiprocessing.Process):
                     # TO BE IMPROVE
                     raise err
                 if job is None:
-                    self._log.Error('try to fetch job id = {0} which was not found in DB'.format(job_id))
+                    self._log.error('try to fetch job id = {0} which was not found in DB'.format(job_id))
+                    continue
                 if job.status.is_buildable():
                     actor = BuildActor(job.id, self._log_config)
                     self._log.debug("{0} start a new BuildActor = {1} job = {2}".format(self._name, actor.name, job.id))
@@ -163,7 +164,7 @@ class JtMonitor(multiprocessing.Process):
         #while the portal continue to accept new jobs 
        
         #entries = list(connection.ProgramJob.find({'status': { '$in' : Status.active_states() }}))
-        entries = list(connection.Job.find({'status': { '$in' : Status.active_states() }}))
+        entries = list(connection.Job.fetch({'status': { '$in' : Status.active_states() }}))
         self._log.debug("{0} new entries = {1}".format(self.name, [en.id for en in entries]))           
         
         #check if a job is already in jobs_table 
@@ -183,6 +184,9 @@ class JtMonitor(multiprocessing.Process):
         """
         for job_id in job_ids:
             job = connection.Job.fetch_one({'_id' : job_id})
+            if job is None:
+                self._log.error('try to fetch job id = {0} which was not found in DB'.format(job_id))
+                continue
             if job.status.is_ended() :
                 if job.must_be_notified():
                     if job.has_been_notified:

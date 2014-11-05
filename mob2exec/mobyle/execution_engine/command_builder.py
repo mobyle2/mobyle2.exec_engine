@@ -240,8 +240,7 @@ class CommandBuilder(object):
                 vdef = self._pre_process_data(vdef_data)
                 self._evaluator['vdef'] = vdef
                 build_log.debug("vdef = {0}".format(vdef))
-                value_data = self.job.get_exec_input_value(parameter.name)
-                value = self._pre_process_data(value_data)
+                value = self._evaluator[parameter.name]
                 self._evaluator['value'] = value
                 build_log.debug("value = {0}".format(value))
                 try:

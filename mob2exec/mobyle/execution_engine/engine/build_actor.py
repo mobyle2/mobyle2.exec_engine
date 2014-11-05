@@ -12,6 +12,7 @@
 import logging.config
 import setproctitle
 import os
+import sys
 
 from mobyle.common.job import Status       
 from mobyle.common.error import InternalError, UserValueError
@@ -45,28 +46,14 @@ class BuildActor(Actor):
         job.save()
         
         self.make_job_environement(job)
-        job.import_data()
         os.chdir(job.dir)
+        job.import_data()
         
-        #import data needed for the job
-       
         #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
         
-        #perform data conversion
-        #how to decide which data must be convert?
-        
-        # the acces log must record 
-        # the submited jobs to mobyle 
-        #  or
-        # the submitted job to execution?
-        #
-        #acc_log = logging.getLogger( 'access')
-        #acc_log.info( "test access log {0}".format(self._name))
-        
-        #the monitor is now aware of the new status
-        
         cb = CommandBuilder(job)
+        err = None
         try:
             cb.check_mandatory()
         except UserValueError as err:
@@ -75,6 +62,11 @@ class BuildActor(Actor):
         except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
+        if err is not None:
+            job.save()
+            self._log.error(str(err))
+            sys.exit()
+            
         try:
             cb.check_ctrl()
         except UserValueError as err:
@@ -83,21 +75,36 @@ class BuildActor(Actor):
         except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
+        if err is not None:
+            job.save()
+            self._log.error(str(err))
+            sys.exit()    
+            
         try:
             cmd_line = cb.build_command() 
             job.cmd_line = cmd_line
         except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
+        if err is not None:
+            job.save()
+            self._log.error(str(err))
+            sys.exit()   
+             
         try:
             job_env =  cb.build_env()
             job.cmd_env = job_env
         except InternalError as err:
             job.status.state = Status.ERROR
             job.message = str(err)
+            self._log.error(str(err))
+            self._log.error(str(err))
+            sys.exit()
+            
         if job.status.state != Status.ERROR:
             job.status.state = Status.TO_BE_SUBMITTED
-        job.save()
+            job.save()
+            
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
     

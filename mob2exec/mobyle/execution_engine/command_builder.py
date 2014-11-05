@@ -183,8 +183,9 @@ class CommandBuilder(object):
                     param_missing_value.append(parameter)
                     build_log.debug("add parameter {0} in param_missing_value".format(parameter.name))
             if param_missing_value:
-                build_log.debug("mandatory parameters missing value: {}".format([p.name for p in param_missing_value]))
-                raise UserValueError(parameters = param_missing_value, message = "parameter is mandatory")
+                message = "mandatory parameters missing value: {}".format([p.name for p in param_missing_value])
+                build_log.debug(message)
+                raise UserValueError(parameters = param_missing_value, message = message)
         return True    
             
             

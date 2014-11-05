@@ -28,6 +28,6 @@ mob2exec/mobyle/common
 ##################################
 # The files generate by coverage #
 ##################################
-
+*\.coverage
 tests/.coverage
 tests/htmlcov

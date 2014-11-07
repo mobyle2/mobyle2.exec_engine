@@ -15,7 +15,7 @@ import os
 import sys
 
 from mobyle.common.job import Status       
-from mobyle.common.error import InternalError, UserValueError
+from mobyle.common.error import MobyleError
 from ..command_builder import CommandBuilder
 from .actor import Actor
 
@@ -56,53 +56,18 @@ class BuildActor(Actor):
         err = None
         try:
             cb.check_mandatory()
-        except UserValueError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        except InternalError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        if err is not None:
-            job.save()
-            self._log.error(str(err))
-            sys.exit()
-            
-        try:
             cb.check_ctrl()
-        except UserValueError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        except InternalError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        if err is not None:
-            job.save()
-            self._log.error(str(err))
-            sys.exit()    
-            
-        try:
-            cmd_line = cb.build_command() 
+            cmd_line = cb.build_command()
             job.cmd_line = cmd_line
-        except InternalError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        if err is not None:
-            job.save()
-            self._log.error(str(err))
-            sys.exit()   
-             
-        try:
             job_env =  cb.build_env()
             job.cmd_env = job_env
-        except InternalError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
+        except MobyleError as err:
+            job.set_error(err)
             self._log.error(str(err))
-            self._log.error(str(err))
-            sys.exit()
-            
-        if job.status.state != Status.ERROR:
-            job.status.state = Status.TO_BE_SUBMITTED
+        else:
+            if job.status.state != Status.ERROR:
+                job.status.state = Status.TO_BE_SUBMITTED
+        finally:
             job.save()
             
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))

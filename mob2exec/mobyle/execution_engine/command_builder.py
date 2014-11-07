@@ -98,7 +98,7 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.error('##################\n# fill evaluator #\n##################')
             program = self.job.service
-            for parameter in program.inputs_list():
+            for parameter in program.parameters_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 value_data = self.job.get_exec_input_value(parameter.name)
                 #build_log.debug(parameter.name, value_data)

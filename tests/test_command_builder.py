@@ -119,7 +119,7 @@ class TestCommandBuilder(unittest.TestCase):
         job.dir = self.test_dir
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True}
+                            'e': 'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()
@@ -130,8 +130,8 @@ class TestCommandBuilder(unittest.TestCase):
 
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True,
-                            'n': True}
+                            'e': 'true',
+                            'n': 'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()
@@ -223,7 +223,7 @@ class TestCommandBuilder(unittest.TestCase):
         self.program.init_ancestors()
         self.program.save()
         job['inputs'] = {}
-        parameter_values = {'string':'"hello world"', 'n':True}
+        parameter_values = {'string':'"hello world"', 'n':'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()
@@ -261,7 +261,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()
@@ -286,7 +286,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()
@@ -301,7 +301,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
         job.import_data()
         job.save()

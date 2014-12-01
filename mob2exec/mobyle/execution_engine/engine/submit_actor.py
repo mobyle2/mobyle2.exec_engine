@@ -15,6 +15,7 @@ import setproctitle
 from mobyle.common.job import Status
 from ..job_routing.route import get_dispatcher
 from .actor import Actor
+import sys, os
 
 class SubmitActor(Actor):
     """
@@ -56,8 +57,10 @@ class SubmitActor(Actor):
         #
         job.execution_system_id = exec_system.name
         # submit the job
-        import random
-        job.execution_job_no = str(random.randint(1,1000))
+        cmd_file = open(os.path.join(job.dir,'.command'),'w')
+        cmd_file.write(job.cmd_line)
+        cmd_file.close()
+        exec_system.run(job)
         job.save()
         
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))

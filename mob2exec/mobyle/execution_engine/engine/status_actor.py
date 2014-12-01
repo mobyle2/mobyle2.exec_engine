@@ -54,17 +54,18 @@ class StatusActor(Actor):
                                                                                              self.job_id,
                                                                                              exec_system.name,
                                                                                              job.execution_job_no))
+        exec_system.get_status(job)
         ####################### BOUCHON ###############################
-        if old_status == Status.SUBMITTED:
-            job.status.state = (Status.RUNNING, Status.PENDING, Status.HOLD)[random.randint(0, 2)]
-        elif old_status == Status.PENDING:
-            job.status.state = (Status.PENDING, Status.RUNNING, Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 4)]
-        elif old_status == Status.HOLD:
-            job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
-        elif old_status == Status.RUNNING:
-            job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
-        if job.status.is_ended():
-            job.end_time = datetime.now()
+        #if old_status == Status.SUBMITTED:
+        #    job.status.state = (Status.RUNNING, Status.PENDING, Status.HOLD)[random.randint(0, 2)]
+        #elif old_status == Status.PENDING:
+        #    job.status.state = (Status.PENDING, Status.RUNNING, Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 4)]
+        #elif old_status == Status.HOLD:
+        #    job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
+        #elif old_status == Status.RUNNING:
+        #    job.status.state = (Status.RUNNING,  Status.HOLD, Status.FINISHED, Status.ERROR, Status.KILLED)[random.randint(0, 3)]
+        #if job.status.is_ended():
+        #    job.end_time = datetime.now()
         ####################### FIN BOUCHON #########################################
         self._log.debug("{0} set job {1} status {2} to {3}".format(self._name, 
                                                                    self.job_id, 

@@ -13,7 +13,7 @@ import logging.config
 import setproctitle
 
 from mobyle.common.job import Status
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import InternalError
 from .actor import Actor
 
 ####### BOUCHON ##########

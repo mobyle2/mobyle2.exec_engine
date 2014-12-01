@@ -9,6 +9,7 @@
 # @organization: Institut Pasteur
 # @license: GPLv3
 #===============================================================================
+from __future__ import print_function
 
 import os
 import sys
@@ -131,27 +132,35 @@ write them on log files.
         """
         stop DBmanager, monitor and logger properly before exiting
         """
-        self._running = False
-        cmd = 'STOP'
-        self._log.debug("put {0} in monitor Q".format(cmd))
-        self.mon_q.put(cmd)
-        self.mon.join()
-        self._log.debug("shutdown logger server") 
-        self.log_receiver.shutdown()
-        self.log_server_thread.join()    
-    
-    def reload_conf(self, signum, frame):
-        self._log.debug("{0} recieved reload".format(self._name)) 
-        cmd = 'RELOAD'
-        self.mon_q.put(cmd)
+        self._log = logging.getLogger('mobyle.{0}'.format(__name__))
+        if self._running:
+            self._running = False
+            cmd = 'STOP'
+            self._log.debug("put {0} in monitor Q".format(cmd))
+            self.mon_q.put(cmd)
+            self.mon.join()
+            self._log.debug("shutdown logger server") 
+            self.log_receiver.shutdown()
+            self.log_server_thread.join()    
+        else:
+            self._log.error("Master is not running")
+            sys.exit()
             
+    def reload_conf(self, signum, frame):
+        self._log = logging.getLogger('mobyle.{0}'.format(__name__))
+        if self._running:
+            self._log.debug("{0} recieved reload".format(self._name)) 
+            cmd = 'RELOAD'
+            self.mon_q.put(cmd)
+        else:
+            self._log.error("Master is not running")    
             
 if __name__ == '__main__':
     import argparse
     import signal
     import lockfile.pidlockfile
     import daemon
-    from mobyle.common.mobyleError import MobyleError
+    from mobyle.common.error import ConfigError
     
     parser = argparse.ArgumentParser(description = "mob2exec is the execution engine of mobyle2")
     parser.add_argument("cmd",
@@ -173,22 +182,12 @@ reload : to reload he configuration file without stopping the daemon (not implem
     from mobyle.common.config import Config
     config_path = os.path.abspath(args.cfg_file)
     if config_path is None:
-        raise MobyleError("no Mobyle config file specified (-c)")
+        raise ConfigError("no Mobyle config file specified (-c)")
     elif not os.path.exists(config_path):
-        raise MobyleError("cannot access {0}: No such file ".format(config_path))
+        raise ConfigError("cannot access {0}: No such file ".format(config_path))
     cfg = Config(config_path).config()
     
-    def mob2_pid(lock_file):
-        pid = None
-        if os.path.exists(lock_file):
-            try:
-                f = file(lock_file, 'r')
-                pid = int(f.readline())
-                f.close()
-            except Exception:
-                pass
-        return pid
-    
+
     def communicate(pid, signum): 
         try:    
             os.kill(pid, signum)
@@ -196,41 +195,44 @@ reload : to reload he configuration file without stopping the daemon (not implem
             print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     
-    lock_file = os.path.join(cfg.get("mob2exec","pid_file"), 'mob2.pid') 
-    print >> sys.stderr, "pid file = {0}".format(lock_file)
+    lock_file = cfg.get("mob2exec","pid_file") 
     #####################
     #                   #
     # start the daemon  #
     #                   #
     #####################         
     if args.cmd == 'start':
-        pid = mob2_pid(lock_file)
-        if pid:
-            print >> sys.stderr, "{0} is already running abort this one (pid={1:d})".format(lock_file, pid)
+        if os.path.exists(lock_file):
+            pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
+            pid = pid_file.read_pid()
+            print("{0} is already running abort this one (pid={1})".format(lock_file, pid), file = sys.stderr)
             sys.exit(2) 
+        pid_dir = os.path.dirname(lock_file)
+        if not os.access(pid_dir, os.R_OK|os.W_OK):
+            print("start failed: cannot create pid file ({0})".format(lock_file), file=sys.stderr)
+            sys.exit(1)
             
-        print "creation du pid_file"
         pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
-        print "instanciation du master"
-        
         master = Master(pid_file, cfg)
         ############################# DEBUG #################################
-        stdout = open(os.path.join('/tmp', 'mob2.stdout'), 'a')
-        stderr = open(os.path.join('/tmp', 'mob2.stderr'), 'a')
-        print "creation du context"
+        log_file = cfg.get("mob2exec","log_file")
+        stdout = open(os.path.join(os.path.dirname(log_file), 'mob2.stdout'), 'a')
+        stderr = open(os.path.join(os.path.dirname(log_file) ,'mob2.stderr'), 'a')
+        print("creation du context")
         context = daemon.DaemonContext( pidfile= pid_file, stdout= stdout, stderr= stderr )
         #context = daemon.DaemonContext( pidfile= pid_file )
         ############################## FIN DEBUG ##########################################
-        print "configuration du context"
+        print("configuration du context")
         context.signal_map = {
                           signal.SIGTERM: master.stop ,
                           signal.SIGHUP:  master.reload_conf ,
                           }
         
-        print "debut de la demonisation"
+        print("debut de la demonisation")
         with context :
             master.start()
-        print "main EXITING"
+            
+        print("main EXITING")
         
     #####################
     #                   #
@@ -238,23 +240,33 @@ reload : to reload he configuration file without stopping the daemon (not implem
     #                   #
     #####################         
     elif args.cmd == 'stop':
-        pid = mob2_pid(lock_file)
-        if pid:
-            communicate(pid, signal.SIGTERM)
+        if os.access(lock_file, os.R_OK|os.W_OK):
+            pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
+            pid = pid_file.read_pid()
+            if pid:
+                communicate(pid, signal.SIGTERM)
+            else:
+                print("{0} is not running ".format(sys.argv[0]), file=sys.stderr)
+                sys.exit(3)
         else:
-            print >> sys.stderr , "{0} is not running ".format(sys.argv[0])
+            print("Cannot access to {pid_file}. May be {prog} is not running ".format(pid_file= lock_file, prog=sys.argv[0]), file=sys.stderr)
             sys.exit(3)
-    
     ######################
     #                    #
     # reload the config  #
     #                    #
     ######################         
     elif args.cmd == 'reload':
-        pid = mob2_pid(lock_file)
-        if pid:
-            communicate(pid, signal.SIGHUP)
+        if os.access(lock_file, os.R_OK|os.W_OK):
+            pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
+            pid = pid_file.read_pid()
+            if pid:
+                communicate(pid, signal.signal.SIGHUP)
+            else:
+                print("{0} is not running ".format(sys.argv[0]), file=sys.stderr)
+                sys.exit(3)
         else:
+            print("Cannot access to {pid_file}. May be {prog} is not running ".format(pid_file= lock_file, prog=sys.argv[0]), file=sys.stderr)
             sys.exit(3)
     else:
         assert True, parser.print_usage()

@@ -16,7 +16,7 @@ from mobyle.common.job import CustomStatus
 from mobyle.common.job import ProgramJob
 from mobyle.common.service import *
 from mobyle.common.type import *
-from mobyle.common.mobyleError import MobyleError, UserValueError
+from mobyle.common.error import InternalError, UserValueError
 from mobyle.execution_engine.command_builder import CommandBuilder, BuildLogger
 
 
@@ -81,7 +81,7 @@ class TestCommandBuilder(unittest.TestCase):
         self.program['inputs']['children'].append(input_options)
         output_stdout = OutputProgramParameter()
         output_stdout['name'] = 'stdout'
-        output_stdout['output_type'] = 'stdout'
+        output_stdout['output_type'] = u'stdout'
         output_stdout_type = FormattedType()
         output_stdout['type'] = output_stdout_type
         self.program['outputs']['children'].append(output_stdout)
@@ -103,6 +103,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -118,8 +119,9 @@ class TestCommandBuilder(unittest.TestCase):
         job.dir = self.test_dir
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True}
+                            'e': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -128,9 +130,10 @@ class TestCommandBuilder(unittest.TestCase):
 
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True,
-                            'n': True}
+                            'e': 'true',
+                            'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
         cb = CommandBuilder(job)
@@ -149,6 +152,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -157,6 +161,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello @world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -165,6 +170,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'_SQ_hello world_SQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -173,6 +179,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'_DQ_hello world_DQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -191,6 +198,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.check_mandatory()
@@ -198,8 +206,10 @@ class TestCommandBuilder(unittest.TestCase):
         
         #mandatory without value
         job['inputs'] = {}
+        job['exec_inputs'] = {}
         parameter_values = {}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         with self.assertRaises(UserValueError) as context:
@@ -213,8 +223,9 @@ class TestCommandBuilder(unittest.TestCase):
         self.program.init_ancestors()
         self.program.save()
         job['inputs'] = {}
-        parameter_values = {'string':'"hello world"', 'n':True}
+        parameter_values = {'string':'"hello world"', 'n':'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         with self.assertRaises(UserValueError) as context:
@@ -229,6 +240,7 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         self.assertTrue(cl)
@@ -249,8 +261,9 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -273,8 +286,9 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         cl = cb.build_command()
@@ -287,8 +301,9 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         cb = CommandBuilder(job)
         build_env = cb.build_env()

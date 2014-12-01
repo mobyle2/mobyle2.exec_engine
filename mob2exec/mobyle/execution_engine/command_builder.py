@@ -16,7 +16,7 @@ import os
 import re
 
 from mobyle.common.data import ListData
-from mobyle.common.mobyleError import MobyleError, UserValueError
+from mobyle.common.error import InternalError, UserValueError
 from mobyle.common.eval_bool import EvalBoolFactory
 
 
@@ -41,7 +41,7 @@ class BuildLogger(object):
         except IOError as err:
             msg = "unable to create file {} for build_log: {}".format(self.file_name, err)
             _log.critical(msg)
-            raise MobyleError("Server Internal Error")
+            raise InternalError("Server Internal Error")
         if self.log is None:
             self.log = logging.getLogger(self.name)
             self.log.setLevel(1)
@@ -88,7 +88,6 @@ class CommandBuilder(object):
             value = data.expr_value()
         return value
     
-    
     def _fill_evaluator(self, evaluator):
         """
         fill the evaluator with the data value 
@@ -99,9 +98,9 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.error('##################\n# fill evaluator #\n##################')
             program = self.job.service
-            for parameter in program.inputs_list():
+            for parameter in program.parameters_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
-                value_data = self.job.get_input_value(parameter.name)
+                value_data = self.job.get_exec_input_value(parameter.name)
                 #build_log.debug(parameter.name, value_data)
                 build_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
@@ -111,7 +110,6 @@ class CommandBuilder(object):
                 build_log.debug('{0} = {1}'.format(parameter.name, value))
                 evaluator[parameter.name] = value
             build_log.debug("evaluator = {0}".format(evaluator))
-            
     
     def _eval_precond(self, preconds, build_log):
         eval_bool = EvalBoolFactory(values = self._evaluator)
@@ -124,7 +122,7 @@ class CommandBuilder(object):
                 msg = "ERROR during precond evaluation: {0} : {1}".format(precond, err)
                 _log.error(msg)
                 build_log.debug(msg)
-                raise MobyleError("Internal Server Error")
+                raise InternalError("Internal Server Error")
             build_log.debug("precond = {0} evaluated as  {1}".format(precond, evaluated_precond))
             if not evaluated_precond :
                 all_preconds_true = False
@@ -142,7 +140,7 @@ class CommandBuilder(object):
         program = self.job.service
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('##################\n# check control #\n##################') 
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.parameters_list():
                 if parameter.has_ctrls():
                     preconds = parameter.preconds
                     all_preconds_true = self._eval_precond(preconds, build_log)
@@ -169,7 +167,7 @@ class CommandBuilder(object):
         param_missing_value = []
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('###################\n# check mandatory #\n###################')
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 if not parameter.mandatory:
                     build_log.debug(" not mandatory => next parameter")
@@ -185,8 +183,9 @@ class CommandBuilder(object):
                     param_missing_value.append(parameter)
                     build_log.debug("add parameter {0} in param_missing_value".format(parameter.name))
             if param_missing_value:
-                build_log.debug("mandatory parameters missing value: {}".format([p.name for p in param_missing_value]))
-                raise UserValueError(parameters = param_missing_value, message = "parameter is mandatory")
+                message = "mandatory parameters missing value: {}".format([p.name for p in param_missing_value])
+                build_log.debug(message)
+                raise UserValueError(parameters = param_missing_value, message = message)
         return True    
             
             
@@ -198,7 +197,7 @@ class CommandBuilder(object):
         
         :return: the command line
         :rtype: string 
-        :raise MobyleError: if something goes wrong during 'format' evaluation.
+        :raise InternalError: if something goes wrong during 'format' evaluation.
         """
         program = self.job.service
         command_line = ''
@@ -219,7 +218,7 @@ class CommandBuilder(object):
         with BuildLogger(self._build_log_file_name) as build_log:
             build_log.debug('#################\n# build command #\n#################')
             command_is_insert = False
-            for parameter in program.inputs_list_by_argpos():
+            for parameter in program.parameters_list_by_argpos():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 arg_pos = parameter.argpos
                 build_log.debug("arg_pos = {}  command_is_insert = {}".format(arg_pos, command_is_insert))
@@ -236,19 +235,18 @@ class CommandBuilder(object):
                             msg = 'the parameter {0}.{1} have argpos {2} and no command found'.format(program.name, parameter.name, arg_pos)
                             _log.error(msg)
                             build_log.error(msg)
-                            raise MobyleError(msg)
+                            raise InternalError(msg)
                  
                 vdef_data = parameter.default_value
                 vdef = self._pre_process_data(vdef_data)
                 self._evaluator['vdef'] = vdef
                 build_log.debug("vdef = {0}".format(vdef))
-                value_data = self.job.get_input_value(parameter.name)
-                value = self._pre_process_data(value_data)
+                value = self._evaluator[parameter.name]
                 self._evaluator['value'] = value
                 build_log.debug("value = {0}".format(value))
                 try:
                     preconds = parameter.preconds
-                except MobyleError, err:
+                except InternalError, err:
                     close_paramfiles()
                     raise
                 all_preconds_true = self._eval_precond(preconds, build_log)    
@@ -270,7 +268,7 @@ class CommandBuilder(object):
                         _log.critical(msg, exc_info = True)
                         build_log.error(msg)
                         close_paramfiles()
-                        raise MobyleError(msg)
+                        raise InternalError(msg)
                     
                     if parameter.has_paramfile():
                         paramfile_name = parameter.paramfile
@@ -281,7 +279,7 @@ class CommandBuilder(object):
                             _log.critical(msg)
                             build_log.error(msg)
                             close_paramfiles()
-                            raise MobyleError(msg)
+                            raise InternalError(msg)
                         
                         if cmd_chunk :
                             paramfile_handle.write(cmd_chunk)

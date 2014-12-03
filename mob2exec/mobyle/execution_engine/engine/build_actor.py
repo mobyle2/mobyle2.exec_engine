@@ -105,6 +105,7 @@ class BuildActor(Actor):
             job.status.state = Status.TO_BE_SUBMITTED
             job.save()
             
+        self.make_script(job)   
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
     
@@ -133,3 +134,21 @@ class BuildActor(Actor):
         os.umask(0022)
         job.dir = job_dir
         
+        
+    def make_script(self, job):
+        """
+        create the script which will be submiited by 
+        the SubmitActor
+        """
+        
+        exec_script_template = """
+        {MODULE_SOURCE}
+        {MODULE_LOAD}
+        {CMD} ; echo $? > .job_return_value
+        """
+        script_args = {'CMD' : job.cmd_line}
+        #chercherz dans la config ce qui est relatif a module
+        
+        exec_script = exec_script_template.format(**script_args)
+        with open('.job_script', 'w') as script_file:
+            script_file.write(exec_script)

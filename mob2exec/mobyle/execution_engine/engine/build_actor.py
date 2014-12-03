@@ -12,10 +12,9 @@
 import logging.config
 import setproctitle
 import os
-import sys
 
 from mobyle.common.job import Status       
-from mobyle.common.error import MobyleError
+from mobyle.common.error import MobyleError, InternalError
 from ..command_builder import CommandBuilder
 from .actor import Actor
 
@@ -102,7 +101,7 @@ class BuildActor(Actor):
         
     def make_script(self, job):
         """
-        create the script which will be submiited by 
+        create the script which will be submited by 
         the SubmitActor
         """
         

@@ -11,10 +11,13 @@
 
 import logging.config
 import setproctitle
+import os
 
+from mobyle.common.error import InternalError
 from mobyle.common.job import Status
 from ..job_routing.route import get_dispatcher
 from .actor import Actor
+
 
 class SubmitActor(Actor):
     """
@@ -29,7 +32,7 @@ class SubmitActor(Actor):
         
         """
         super(SubmitActor, self).__init__(job_id, log_conf)
-
+        
            
     def run(self):
         self._name = "SubmitActor-{:d}".format(self.pid)
@@ -41,6 +44,13 @@ class SubmitActor(Actor):
         job = self.get_job()
         job.status.state = Status.SUBMITTING
         job.save()
+        
+        try:
+            os.chdir(job.dir)
+        except OSError, err:
+            msg = "cannot change working dir for job dir : {0}".format(err)
+            self._log.critical(msg)
+            raise InternalError(message = msg)
         
         ###################### 
         

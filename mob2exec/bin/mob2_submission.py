@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 #========================
@@ -24,6 +25,7 @@ if (os.path.join(MOBYLEHOME , 'mob2exec')) not in sys.path:
 import time
 import random
 import shutil
+import glob
 import argparse
 parser = argparse.ArgumentParser(description="simulate submission from a user")
 parser.add_argument("-c", "--config",
@@ -42,7 +44,7 @@ from mobyle.common.project import Project
 from mobyle.common.job import Status
 from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
-from mobyle.common.job_routing_model import ExecutionRoutes
+from mobyle.common.job_routing_model import ExecutionRoutes, ExecutionRule
 
 from mobyle.common.service import *
 from mobyle.common.type import *
@@ -123,66 +125,42 @@ def program_generator():
     programs = []
     
     program_1 = connection.Program()
-    program_1['name'] = 'echo'  
-    program_1['command'] = 'echo '
-    inputs = InputParagraph()
-    outputs = OutputParagraph()
-    program_1['inputs'] = inputs
-    program_1['outputs'] = outputs
+    program_1['name'] = 'golden'  
+    program_1['command'] = 'golden '
+    program_1['inputs'] = InputParagraph()
 
-    input_string = InputProgramParameter()
-    input_string['name'] = 'string'
-    input_string['argpos'] = 99
-    input_string['format'] = '" " + value'
-    input_string['mandatory'] = True
-    input_string_type = StringType()
-    input_string['type'] = input_string_type
+    bank = InputProgramParameter()
+    bank['name'] = 'bank'
+    bank['argpos'] = 10
+    bank['mandatory'] = True
+    bank['type'] = StringType()
 
-    input_first = InputProgramParameter()
-    input_first['name'] = 'string'
-    input_first['argpos'] = -10
-    input_first['format'] = '"ln -s toto titi && "'
-    input_first_type = StringType()
-    input_first['type'] = input_first_type
+    seq_id = InputProgramParameter()
+    seq_id['name'] = 'seq_id'
+    seq_id['argpos'] = 20
+    seq_id['format'] = "' {bank}:{id}'.format(bank = bank, id = seq_id)"
+    seq_id['type'] = StringType()
 
-    input_options = InputProgramParagraph()
-
-    input_options['argpos'] = 2
-    input_n = InputProgramParameter()
-    # n has no argpos, its argpos will be 2
-    input_n['type'] = BooleanType()
-    input_n['name'] = 'n'
-    input_n['format'] = '" -n " if value else ""'
-    input_options['children'].append(input_n)
-
-    # e has an argpos of 3
-    input_e = InputProgramParameter()
-    input_e['type'] = BooleanType()
-    input_e['argpos'] = 3
-    input_e['name'] = 'e'
-    input_e['format'] = '" -e " if value else ""'
-    input_e['precond'] = {'n': True}
-    input_options['children'].append(input_e)
-
-    program_1['inputs']['children'].append(input_string)
-    program_1['inputs']['children'].append(input_first)
-    program_1['inputs']['children'].append(input_options)    
-
-    output_stdout = OutputProgramParameter()
-    output_stdout['name'] = 'stdout'
-    output_stdout['output_type'] = 'stdout'
-    output_stdout_type = FormattedType()
-    output_stdout['type'] = output_stdout_type
-    program_1['outputs']['children'].append(output_stdout)
+    program_1['inputs']['children'].append(bank)
+    program_1['inputs']['children'].append(seq_id)
     program_1.save()
     
-    print "type program_1 = ", type(program_1)
+#     program_2 = connection.Program()
+#     program_2['name'] = 'clutalw'  
+#     program_2['command'] = 'clustalw2 -align '
+#     program_2['inputs'] = InputParagraph()
+# 
+#     input_seq = InputProgramParameter()
+#     input_seq['name'] = 'input_seq'
+#     input_seq['argpos'] = 10
+#     input_seq['mandatory'] = True
+#     input_seq['type'] = StringType()
+#     input_seq['format'] = '" -infile=" + str(value)'
     
-    programs.append((program_1, {'string':'"hello world"', 'e': True, 'n': True}))
-    programs.append((program_1, {'string':'"hello world"'}))
-    programs.append((program_1, {'e': True, 'n': True}))            
-    programs.append((program_1, {'string':'"hello world"', 'n':True}))
-    programs.append((program_1, {'string':'"hello world"', 'e': True}))
+    programs.append((program_1, {'bank':'uniprot_sprot', 'seq_id': '104k_thepa'}))
+    programs.append((program_1, {'bank':'uniprot_sprot', 'seq_id': 'il2_human'}))
+    programs.append((program_1, {'bank':'uniprot_sprot', 'seq_id': 'abcd3_rat'}))
+    
     
     def get_program():
         return random.choice(programs)
@@ -191,7 +169,9 @@ def program_generator():
 
 get_program = program_generator()
 
-def put_new_job_in_db(name, cmd_line, project ):
+
+
+def put_new_job_in_db(name, project):
     job = connection.ProgramJob()
     job.project = project.id 
     job.name = name
@@ -207,9 +187,12 @@ def put_new_job_in_db(name, cmd_line, project ):
     print("put new job {0} in db".format(job.id))
                     
 def clean_dirs():
-    projects_dir = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 'projects')
-    if os.path.exists(projects_dir):
-        shutil.rmtree(projects_dir)
+    projects_store = Config.config().get("DEFAULT","projects_store")
+    projects_dirs = os.path.join(projects_store, 'projects')
+    projects_dirs = glob.glob(os.path.join(projects_dirs, '*'))
+    for p_dir in projects_dirs:
+        if os.path.exists(p_dir):
+            shutil.rmtree(p_dir)
     
 def create_user(name):
     user = connection.User()
@@ -223,11 +206,11 @@ def create_project(user, name):
     project['owner'] = user['_id']
     project['name'] = name
     project.save()
-    project_directory = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 
-                                     'projects', 
-                                     str(project.id))   
-    os.makedirs(project_directory, 0755) #create parent directory
-    project.dir = project_directory
+    #project_directory = os.path.join(os.path.dirname(config.get("mob2exec","pid_file")), 
+    #                                 'projects', 
+    #                                 str(project.id))   
+    #os.makedirs(project_directory, 0755) #create parent directory
+    #project.dir = project_directory
     project.save()
     return project
 
@@ -265,23 +248,25 @@ if __name__ == '__main__':
                                  },
                                 {"_id" : "local",
                                  "class" : "Local",
-                                 "native_specifications" : " nice -n 18 "
                                  }],
             
                 "map": [ {"name": "route_1", 
-                          "rules" : [{"name" : "user_is_local"} , {"name" : "job_name_match", 
-                                                                   "parameters" : {"name": "Filochard"}
-                                                                   }
+                          "rules" : [ExecutionRule({"name" : "user_is_local",
+                                                   "parameters":None}), 
+                                     ExecutionRule({"name" : "job_name_match", 
+                                                    "parameters" : {"name": "Filochard"}
+                                                                   })
                                      ],
                           "exec_system" : "big_one" 
                                       },
                          {"name" :"route_2",
-                          "rules" : [{"name" : "project_match", "parameters" : {"name": "dans le cambouis"}} ],
+                          "rules" : [ExecutionRule({"name" : "project_match", 
+                                                    "parameters" : {"name": "dans le cambouis"}})],
                           "exec_system" : "small_one" 
                          },
                          {"name" : "default",
                           "rules" : [],
-                          "exec_system" : "cluster_two" 
+                          "exec_system" : "local" 
                           }
                         ]
                }
@@ -299,12 +284,13 @@ if __name__ == '__main__':
     for name in ('Filochard', 'Ribouldingue', 'Croquignol'):
         pieds_nickeles[name] = create_user(name)
     
-    for name in ('organisateurs de voyage', 'dans le cambouis', "l'Opération congélation"):
-        projects[name] = create_project(random.choice(pieds_nickeles.values()), name)
-    
+ #   for name in ('organisateurs de voyage', 'dans le cambouis', "l'Opération congélation"):
+ #       projects[name] = create_project(random.choice(pieds_nickeles.values()), name)
+    projects[name] = create_project(pieds_nickeles['Croquignol'], 'organisateurs de voyage')
+                                        
     for i in range(0, 500):
         time.sleep(random.randint(0, 5))
-        j = cmdlines[ random.randint(1, 3)]
-        put_new_job_in_db(j['name'], j['cmd_line'], random.choice(projects.values()))
+        #j = cmdlines[ random.randint(1, 3)]
+        put_new_job_in_db('golden', random.choice(projects.values()))
            
     print("no more job to add in DB")

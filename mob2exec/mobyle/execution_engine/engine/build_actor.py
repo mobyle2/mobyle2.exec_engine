@@ -106,13 +106,15 @@ class BuildActor(Actor):
         """
         
         exec_script_template = """
-        {MODULE_SOURCE}
-        {MODULE_LOAD}
-        {CMD} ; echo $? > .job_return_value
-        """
+{MODULE_SOURCE}
+{MODULE_LOAD}
+{CMD} ; echo $? > .job_return_value
+"""
         script_args = {'CMD' : job.cmd_line}
         #chercherz dans la config ce qui est relatif a module
-        
+        ## BOUCHON
+        script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'
+        script_args['MODULE_LOAD'] ='# ici devrai apparaitre le module load'
         exec_script = exec_script_template.format(**script_args)
         with open('.job_script', 'w') as script_file:
             script_file.write(exec_script)

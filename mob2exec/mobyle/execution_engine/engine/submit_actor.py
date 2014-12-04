@@ -52,23 +52,23 @@ class SubmitActor(Actor):
             self._log.critical(msg)
             raise InternalError(message = msg)
         
-        ###################### 
-        
-        # here the code to submit a job
         dispatcher = get_dispatcher()
         route = dispatcher.which_route(job)
         exec_system = route.exec_sys
         
         project = job.get_project()
+        
+        ############### DEBUG #######################
         self._log.info( u"{0} job {1} (project = {2} ) has route {3}".format(self._name, job.id, project['name'], route.name))
         self._log.info( u"{0} job {1} use exec system {2}".format(self._name, job.id, exec_system.name))
-        #####################  
-        #
+        ############### DEBUG #######################
+        
         job.execution_system_id = exec_system.name
         # submit the job
-        import random
-        job.execution_job_no = str(random.randint(1,1000))
+        job_pid = exec_system.run(job)
+        job.execution_job_no = str(job_pid)
         job.save()
+        
         
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
         

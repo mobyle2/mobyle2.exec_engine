@@ -37,9 +37,9 @@ class Local(ExecutionSystem):
             msg = "job {id} is not in right dir: {cwd} instead of {job_dir}".format(id = job.id, cwd = os.getcwd(), job_dir = job_dir)
             self._log.critical(msg)
             raise InternalError(message = msg)
-        
-        with open(os.path.join(job_dir, + '.out'), 'w') as fout:
-            with open(os.path.join(job_dir, + '.err'), 'w') as ferr:
+        service_name = job.service.name
+        with open(os.path.join(job_dir,  service_name + '.out'), 'w') as fout:
+            with open(os.path.join(job_dir,service_name  + '.err'), 'w') as ferr:
                 try:
                     # the new process launch by popen must be a session leader
                     # because the pid store in job is the pid of the wrapper
@@ -55,7 +55,7 @@ class Local(ExecutionSystem):
                         raise InternalError()
                     
                     job_wrapper_path =  os.path.join( job_dir , ".job_script" )
-                    pipe = Popen([setsid_path, setsid_path, job_wrapper_path], 
+                    pipe = Popen([setsid_path, setsid_path, '/bin/sh', job_wrapper_path], 
                                  stdout = fout, 
                                  stderr = ferr, 
                                  shell = False,
@@ -66,9 +66,8 @@ class Local(ExecutionSystem):
                     self._log.critical(msg, exc_info = True)
                     raise InternalError(message = msg) 
                     
-        job.execution_job_no = pipe.pid
-        job.save()
-    
+        
+        return pipe.pid
     
     
     def get_status(self, job):
@@ -84,7 +83,7 @@ class Local(ExecutionSystem):
         # the pid is the pid of the job_wrapper
         # it does not really matter as if the 
         # wrapper is alive the job should be too
-        job_pid = job.execution_job_no
+        job_pid = int(job.execution_job_no)
         job_dir = os.path.normpath(job.dir)
         try:
             os.kill(job_pid, SIG_DFL)
@@ -122,7 +121,7 @@ class Local(ExecutionSystem):
         :param job: the job to kill.
         :type job: :class:`mobyle.common.job.Job` object.
         """
-        job_pid = job.execution_job_no
+        job_pid = int(job.execution_job_no)
         job_pgid = os.getpgid(job_pid)
         job_id = job.id
         try:

@@ -20,7 +20,14 @@ from mobyle.common.error import InternalError, UserValueError
 from mobyle.common.eval_bool import EvalBoolFactory
 
 
-class BuildLogger(object):
+class JobLogger(object):
+    """
+    JobLogger is a special logger which log information about:
+    
+    * the command line building
+    * the recovering of outputs
+    
+    """
     
     def __init__(self, file_name):
         self.file_name = file_name
@@ -62,15 +69,26 @@ class BuildLogger(object):
 
 
 
-class CommandBuilder(object):
-    
-    def __init__(self, program_job):
+class Evaluator(object):
+    """
+    provide a virgin namespace to evaluate the python expression specified in service description
+    without any interactions with mobyle internal variables
+    """
+
+    def __init__(self, program_job, log_file):
+        """
+        :param program_job: the program job to evaluate code
+        :type program_job: :class:`mobyle.common.job.ProgramJob` instance
+        :param log_file: the name of the file to store the logs.
+        :type log_file: string
+        """
         self.job = program_job
-        self._build_log_file_name = os.path.join(self.job.dir, '.cmd_build_log')
+        self._job_log_file_name = os.path.join(self.job.dir, log_file) 
         self._evaluator = {}
         self._evaluator['re'] = re
         self._fill_evaluator(self._evaluator)
-    
+        
+        
     def _pre_process_data(self, data):
         """
         :param data: the data to get the value 
@@ -88,6 +106,7 @@ class CommandBuilder(object):
             value = data.expr_value()
         return value
     
+    
     def _fill_evaluator(self, evaluator):
         """
         fill the evaluator with the data value 
@@ -95,40 +114,49 @@ class CommandBuilder(object):
         :param evaluator: the evaluator to fill
         :type evaluator: :class:`Evaluator` object
         """
-        with BuildLogger(self._build_log_file_name) as build_log:
-            build_log.error('##################\n# fill evaluator #\n##################')
+        with JobLogger(self._job_log_file_name) as job_log:
+            job_log.error('##################\n# fill evaluator #\n##################')
             program = self.job.service
             for parameter in program.parameters_list():
-                build_log.debug("------ parameter {0} ------".format(parameter.name))
+                job_log.debug("------ parameter {0} ------".format(parameter.name))
                 value_data = self.job.get_exec_input_value(parameter.name)
-                #build_log.debug(parameter.name, value_data)
-                build_log.debug("value_data = {0}".format(value_data))
+                #job_log.debug(parameter.name, value_data)
+                job_log.debug("value_data = {0}".format(value_data))
                 if value_data is None:
                     # if there is no vdef default_value return None
                     value_data = parameter.default_value
                 value = self._pre_process_data(value_data)
-                build_log.debug('{0} = {1}'.format(parameter.name, value))
+                job_log.debug('{0} = {1}'.format(parameter.name, value))
                 evaluator[parameter.name] = value
-            build_log.debug("evaluator = {0}".format(evaluator))
+            job_log.debug("evaluator = {0}".format(evaluator))
     
-    def _eval_precond(self, preconds, build_log):
+    
+    def eval_precond(self, preconds, job_log):
         eval_bool = EvalBoolFactory(values = self._evaluator)
         all_preconds_true = True
         for precond in preconds:
             try:
                 evaluated_precond = eval_bool.test(precond)
-                build_log.debug("precond = '{0}' => {1}".format(precond, evaluated_precond))
+                job_log.debug("precond = '{0}' => {1}".format(precond, evaluated_precond))
             except Exception as err:
                 msg = "ERROR during precond evaluation: {0} : {1}".format(precond, err)
                 _log.error(msg)
-                build_log.debug(msg)
+                job_log.debug(msg)
                 raise InternalError("Internal Server Error")
-            build_log.debug("precond = {0} evaluated as  {1}".format(precond, evaluated_precond))
+            job_log.debug("precond = {0} evaluated as  {1}".format(precond, evaluated_precond))
             if not evaluated_precond :
                 all_preconds_true = False
                 break
         return all_preconds_true
-        
+            
+
+
+
+class CommandBuilder(Evaluator):
+    """provide a virgin namespace to evaluate the python expression specified in service description
+    without any interactions with mobyle internal variables.
+    provide all methods needed to build the command line en environemnt needed to excecute a ProgramJob
+    """
         
     def check_ctrl(self):
         """
@@ -138,12 +166,12 @@ class CommandBuilder(object):
         """
         eval_bool = EvalBoolFactory(values = self._evaluator)
         program = self.job.service
-        with BuildLogger(self._build_log_file_name) as build_log:
+        with JobLogger(self._job_log_file_name) as build_log:
             build_log.debug('##################\n# check control #\n##################') 
             for parameter in program.parameters_list():
                 if parameter.has_ctrls():
                     preconds = parameter.preconds
-                    all_preconds_true = self._eval_precond(preconds, build_log)
+                    all_preconds_true = self.eval_precond(preconds, build_log)
                     if all_preconds_true:
                         ctrls = parameter.ctrls
                         for ctrl in ctrls:
@@ -157,6 +185,7 @@ class CommandBuilder(object):
                     else:
                         return True
                           
+                          
     def check_mandatory(self):
         """
         :return: True, if all mandatory parameters have a value (check preconds if necessary).
@@ -165,7 +194,7 @@ class CommandBuilder(object):
         """
         program = self.job.service
         param_missing_value = []
-        with BuildLogger(self._build_log_file_name) as build_log:
+        with JobLogger(self._job_log_file_name) as build_log:
             build_log.debug('###################\n# check mandatory #\n###################')
             for parameter in program.inputs_list():
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
@@ -175,7 +204,7 @@ class CommandBuilder(object):
                 build_log.debug("check parameter {0}".format(parameter.name))
                 build_log.debug("------ parameter {0} ------".format(parameter.name))
                 preconds = parameter.preconds
-                all_preconds_true = self._eval_precond(preconds, build_log)    
+                all_preconds_true = self.eval_precond(preconds, build_log)    
                 if not all_preconds_true :
                     build_log.debug("all preconds are not True: next parameter")
                     continue #next parameter
@@ -188,8 +217,6 @@ class CommandBuilder(object):
                 raise UserValueError(parameters = param_missing_value, message = message)
         return True    
             
-            
-
                   
     def build_command(self):
         """
@@ -215,7 +242,7 @@ class CommandBuilder(object):
                     msg = "cannot close paramfile {0}: {1}".format(handle.name, err)
                     _log.error(msg)
                 
-        with BuildLogger(self._build_log_file_name) as build_log:
+        with JobLogger(self._job_log_file_name) as build_log:
             build_log.debug('#################\n# build command #\n#################')
             command_is_insert = False
             for parameter in program.parameters_list_by_argpos():
@@ -249,7 +276,7 @@ class CommandBuilder(object):
                 except InternalError, err:
                     close_paramfiles()
                     raise
-                all_preconds_true = self._eval_precond(preconds, build_log)    
+                all_preconds_true = self.eval_precond(preconds, build_log)    
                 if not all_preconds_true :
                     build_log.debug("all preconds are not True: next parameter")
                     continue #next parameter
@@ -307,7 +334,7 @@ class CommandBuilder(object):
         :return: the environment needed by the job to be executed 
         :rtype: dict
         """
-        with BuildLogger(self._build_log_file_name) as build_log:
+        with JobLogger(self._job_log_file_name) as build_log:
             build_log.debug('##################\n# build env #\n##################')
             program = self.job.service
             job_env = program.env.copy()

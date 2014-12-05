@@ -15,7 +15,7 @@ import os
 
 from mobyle.common.job import Status       
 from mobyle.common.error import MobyleError, InternalError
-from ..command_builder import CommandBuilder
+from mobyle.execution_engine.evaluator import CommandBuilder
 from .actor import Actor
 
 class BuildActor(Actor):
@@ -51,7 +51,7 @@ class BuildActor(Actor):
         #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
         
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         err = None
         try:
             cb.check_mandatory()

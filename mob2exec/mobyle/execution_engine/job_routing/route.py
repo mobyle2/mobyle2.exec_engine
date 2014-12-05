@@ -121,8 +121,8 @@ class Dispatcher(object):
     
     def append(self, route):
         """
-        :param route: a route to appnd to this dispatcher
-        :type route: c'ass:`Route` instance
+        :param route: a route to append to this dispatcher
+        :type route: :class:`Route` instance
         
         """
         self.routes[route.name] = route

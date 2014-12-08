@@ -47,9 +47,10 @@ class SubmitActor(Actor):
         
         try:
             os.chdir(job.dir)
-        except OSError, err:
+        except OSError as err:
             msg = "cannot change working dir for job dir : {0}".format(err)
             self._log.critical(msg)
+            job.status = Status.ERROR
             raise InternalError(message = msg)
         
         dispatcher = get_dispatcher()
@@ -65,7 +66,12 @@ class SubmitActor(Actor):
         
         job.execution_system_id = exec_system.name
         # submit the job
-        job_pid = exec_system.run(job)
+        try:
+            job_pid = exec_system.run(job)
+        except InternalError as err:
+            job.status = Status.ERROR
+            job.save()
+            raise
         job.execution_job_no = str(job_pid)
         job.save()
         

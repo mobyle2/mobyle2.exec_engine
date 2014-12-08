@@ -27,10 +27,12 @@ class Local(ExecutionSystem):
     
     def run(self, job):
         """
-        run a job asynchronously on the execution system.
+        run a job asynchronously on the local system.
         
         :param job: the job to run.
         :type job: :class:`mobyle.common.job.Job` object.
+        :returns: the pid of the job_script
+        :rtype: int
         """
         job_dir = os.path.normpath(job.dir)
         if os.getcwd() != job_dir:
@@ -39,7 +41,7 @@ class Local(ExecutionSystem):
             raise InternalError(message = msg)
         service_name = job.service.name
         with open(os.path.join(job_dir,  service_name + '.out'), 'w') as fout:
-            with open(os.path.join(job_dir,service_name  + '.err'), 'w') as ferr:
+            with open(os.path.join(job_dir,service_name + '.err'), 'w') as ferr:
                 try:
                     # the new process launch by popen must be a session leader
                     # because the pid store in job is the pid of the wrapper
@@ -51,8 +53,9 @@ class Local(ExecutionSystem):
                     
                     setsid_path = which('setsid')
                     if setsid_path is None:
-                        self._log.critical()
-                        raise InternalError()
+                        msg = 'no setsid in '+ os.environ["PATH"]
+                        self._log.critical(msg)
+                        raise InternalError(message = msg)
                     
                     job_wrapper_path =  os.path.join( job_dir , ".job_script" )
                     pipe = Popen([setsid_path, setsid_path, '/bin/sh', job_wrapper_path], 
@@ -96,17 +99,18 @@ class Local(ExecutionSystem):
                 except Exception as err:
                     msg = "cannot read job return value for {job_dir}: {err}".format(job_dir = job_dir, err = err)
                     self._log.error(msg, exc_info = True)
+                    status = Status(Status.ERROR)
                     raise InternalError(message = msg)
                 if return_code == 0:
-                    status = Status.FINISHED
+                    status = Status(Status.FINISHED)
                 else:    
-                    status = Status.ERROR
+                    status = Status(Status.ERROR)
             else:
                 msg = "an unexpected error occured during querying a local job status: {job_dir} : {err}".format(job_dir = job_dir, err = err)
                 self._log.error(msg, exc_info = True)
-                return Status.UNKNOWN
+                return Status(Status.UNKNOWN)
         else:    
-            status = Status.RUNNING 
+            status = Status(Status.RUNNING) 
         job.status.state = status
         job.save()
         return status
@@ -124,6 +128,10 @@ class Local(ExecutionSystem):
         job_id = job.id
         try:
             os.killpg(job_pgid, SIGTERM)
+            status = Status(Status.KILLED)
+            job.status.state = status
+            job.message("this job has been killed")
+            job.save()
         except OSError as err:
             raise InternalError("cannot kill job {job_id}: {err}".format(job_id = job_id, err = err))
         try:

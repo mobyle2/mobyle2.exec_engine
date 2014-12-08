@@ -65,8 +65,6 @@ class Local(ExecutionSystem):
                     msg= "Local execution failed: job dir = {job_dir} : {err}".format(job_dir = job_dir, err = err)
                     self._log.critical(msg, exc_info = True)
                     raise InternalError(message = msg) 
-                    
-        
         return pipe.pid
     
     
@@ -106,7 +104,7 @@ class Local(ExecutionSystem):
             else:
                 msg = "an unexpected error occured during querying a local job status: {job_dir} : {err}".format(job_dir = job_dir, err = err)
                 self._log.error(msg, exc_info = True)
-                raise InternalError(message = msg)
+                return Status.UNKNOWN
         else:    
             status = Status.RUNNING 
         job.status.state = status

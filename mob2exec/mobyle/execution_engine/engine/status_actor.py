@@ -47,7 +47,7 @@ class StatusActor(Actor):
         self._log = logging.getLogger(__name__) 
         
         job = self.get_job()
-        old_status = job.status.state
+        old_status = job.status
         job.status.state = Status.UPDATING
         job.save()
         
@@ -56,13 +56,18 @@ class StatusActor(Actor):
         
         new_status = exec_system.get_status(job)
         if old_status != new_status:
-            
             if new_status.is_ended():
                 job.end_time = datetime.now()
-            if new_status == Status.FINISHED:
+            if new_status == Status(Status.FINISHED):
                 self.get_results(job)
-            job.status.state =  new_status   
-            job.save()
+            try:
+                job.status.state =  new_status.state   
+            except InternalError as err:
+                msg = "problem to update status of job: {job_dir} : err".format(job_dir = job.dir, err = err)
+                self._log.error(msg)
+                raise
+            finally:
+                job.save()
         job.save()
         self._log.debug("{0} exiting".format(self._name))
         

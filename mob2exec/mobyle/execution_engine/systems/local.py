@@ -99,21 +99,23 @@ class Local(ExecutionSystem):
                 except Exception as err:
                     msg = "cannot read job return value for {job_dir}: {err}".format(job_dir = job_dir, err = err)
                     self._log.error(msg, exc_info = True)
-                    status = Status(Status.ERROR)
+                    status = Status.ERROR
                     raise InternalError(message = msg)
                 if return_code == 0:
-                    status = Status(Status.FINISHED)
+                    status = Status.FINISHED
                 else:    
-                    status = Status(Status.ERROR)
+                    status = Status.ERROR
             else:
                 msg = "an unexpected error occured during querying a local job status: {job_dir} : {err}".format(job_dir = job_dir, err = err)
                 self._log.error(msg, exc_info = True)
-                return Status(Status.UNKNOWN)
+                job.status.state = Status.UNKNOWN
+                job.save()
+                return job.status
         else:    
-            status = Status(Status.RUNNING) 
+            status = Status.RUNNING
         job.status.state = status
         job.save()
-        return status
+        return job.status
     
     
     def kill(self, job):
@@ -128,7 +130,7 @@ class Local(ExecutionSystem):
         job_id = job.id
         try:
             os.killpg(job_pgid, SIGTERM)
-            status = Status(Status.KILLED)
+            status = Status.KILLED
             job.status.state = status
             job.message("this job has been killed")
             job.save()

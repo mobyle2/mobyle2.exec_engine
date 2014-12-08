@@ -42,7 +42,7 @@ class SubmitActor(Actor):
         self._log = logging.getLogger(__name__) 
         
         job = self.get_job()
-        job.status.state = Status(Status.SUBMITTING)
+        job.status.state = Status.SUBMITTING
         job.save()
         
         try:
@@ -50,7 +50,8 @@ class SubmitActor(Actor):
         except OSError as err:
             msg = "cannot change working dir for job dir : {0}".format(err)
             self._log.critical(msg)
-            job.status = Status(Status.ERROR)
+            job.status.state = Status.ERROR
+            job.save()
             raise InternalError(message = msg)
         
         dispatcher = get_dispatcher()
@@ -73,12 +74,8 @@ class SubmitActor(Actor):
             job.save()
             raise
         job.execution_job_no = str(job_pid)
+        job.status.state = Status.SUBMITTED
         job.save()
-        
-        
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
-        
-        job.status.state = Status(Status.SUBMITTED)
-        job.save()
         
         

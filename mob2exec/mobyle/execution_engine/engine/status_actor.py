@@ -63,7 +63,7 @@ class StatusActor(Actor):
             try:
                 job.status.state =  new_status.state   
             except InternalError as err:
-                msg = "problem to update status of job: {job_dir} : err".format(job_dir = job.dir, err = err)
+                msg = "problem to update status of job: {job_dir} : {err}".format(job_dir = job.dir, err = err)
                 self._log.error(msg)
                 raise
             finally:

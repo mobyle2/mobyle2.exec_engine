@@ -132,5 +132,7 @@ class StatusActor(Actor):
                         job['outputs'][parameter.name] = data
                     else:
                         continue
+            job.save()
+                 
            
             

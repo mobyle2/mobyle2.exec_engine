@@ -134,7 +134,20 @@ class TestEvaluator(unittest.TestCase):
         ev['string'] = 'peekaboo'
         self.assertEqual(ev['string'], 'peekaboo')
 
-    
+    def test_eval(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world',
+                            'e': 'true'}
+        job.process_inputs(parameter_values)
+        job.import_data()
+        job.save()
+        ev = Evaluator(job, job.log_file_name)
+        self.assertEqual('hello world', ev.eval('string'))
     
     def test_eval_precond(self):
         #parameter with precond     

@@ -76,7 +76,7 @@ class StatusActor(Actor):
         """
         :todo: we assume we have only **ONE** file. to take in account directory we need to recode.  
         """
-        program = self.job.service
+        program = job.service
         evaluator = Evaluator(job, job.log_file_name)
         with JobLogger(job.log_file_name) as job_log:
             job_log.debug('###################\n# retrieve results #\n###################')

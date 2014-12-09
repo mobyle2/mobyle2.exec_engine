@@ -51,6 +51,15 @@ class StatusActor(Actor):
         job.status.state = Status.UPDATING
         job.save()
         
+        try:
+            os.chdir(job.dir)
+        except OSError as err:
+            msg = "cannot change working dir for job dir : {0}".format(err)
+            self._log.critical(msg)
+            job.status.state = Status.ERROR
+            job.save()
+            raise InternalError(message = msg)
+        
         exec_system_id = str(job.execution_system_id)
         exec_system = self.get_execution_system(exec_system_id)
         
@@ -63,7 +72,7 @@ class StatusActor(Actor):
             try:
                 job.status.state =  new_status.state   
             except InternalError as err:
-                msg = "problem to update status of job: {job_dir} : err".format(job_dir = job.dir, err = err)
+                msg = "problem to update status of job: {job_dir} : {err}".format(job_dir = job.dir, err = err)
                 self._log.error(msg)
                 raise
             finally:
@@ -132,5 +141,7 @@ class StatusActor(Actor):
                         job['outputs'][parameter.name] = data
                     else:
                         continue
+            job.save()
+                 
            
             

@@ -46,7 +46,7 @@ class JobLogger(object):
         try:
             self.stream = open(self.file_name, 'a')
         except IOError as err:
-            msg = "unable to create file {} for build_log: {}".format(self.file_name, err)
+            msg = "unable to create file {name} in dir {dir} for build_log: {err}".format(name = self.file_name, dir = os.getcwd(), err = err)
             _log.critical(msg)
             raise InternalError("Server Internal Error")
         if self.log is None:
@@ -169,8 +169,16 @@ class Evaluator(object):
                 all_preconds_true = False
                 break
         return all_preconds_true
+          
             
-
+    def eval(self, expr):
+        """
+        :return: the evaluation of the expr in the private namespace
+        
+        :param expr: the expression to evaluate
+        :type expr: string
+        """
+        return eval(expr, self._evaluator)
 
 
 class CommandBuilder(Evaluator):

@@ -99,24 +99,18 @@ class Local(ExecutionSystem):
                 except Exception as err:
                     msg = "cannot read job return value for {job_dir}: {err}".format(job_dir = job_dir, err = err)
                     self._log.error(msg, exc_info = True)
-                    job.status.state = Status.ERROR
-                    job.save()
-                    raise InternalError(message = msg)
+                    new_state = Status.UNKNOWN
                 if return_code == 0:
-                    status = Status.FINISHED
+                    new_state = Status.FINISHED
                 else:    
-                    status = Status.ERROR
+                    new_state = Status.ERROR
             else:
                 msg = "an unexpected error occured during querying a local job status: {job_dir} : {err}".format(job_dir = job_dir, err = err)
                 self._log.error(msg, exc_info = True)
-                job.status.state = Status.UNKNOWN
-                job.save()
-                return job.status
+                new_state = Status.UNKNOWN
         else:    
-            status = Status.RUNNING
-        job.status.state = status
-        job.save()
-        return job.status
+            new_state = Status.RUNNING
+        return Status(new_state)
     
     
     def kill(self, job):

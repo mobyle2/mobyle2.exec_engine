@@ -47,10 +47,13 @@ class StatusActor(Actor):
         self._log = logging.getLogger(__name__) 
         
         job = self.get_job()
-        old_status = job.status
+        #we must generate a new status object not just change the state
+        #other wise old_statuschange each time we change the job_status.state
+        #as it is the same object
+        old_status = Status(job.status.state)
         job.status.state = Status.UPDATING
         job.save()
-        
+        self._log.info( "{0} try to get status of job {1} actual status is {2}".format(self._name, job.id, old_status))
         try:
             os.chdir(job.dir)
         except OSError as err:
@@ -104,15 +107,16 @@ class StatusActor(Actor):
                     job_log.debug("all preconds are not True: next parameter")
                     continue #next parameter
                 
-                filenames = parameter.filenames()
+                #filenames must be One string for parameter
+                filenames = parameter.filenames
                 job_log.debug("filenames = {0}".format(filenames))
                 unix_mask = None
                 if filenames:
                     try:
-                        unix_mask = eval(filenames, evaluator)
+                        unix_mask = evaluator.eval(filenames)
                         job_log.debug("unix_mask = {0}".format(unix_mask))
                     except Exception as err:
-                        msg = "ERROR during evaluation of program {0}: parameter {1} : filenames {2} err {3}".format(program['name'],
+                        msg = "ERROR during evaluation of parameter {0}.{1} : filenames {2}: err {3}".format(program['name'],
                                                                                                                      parameter.name,
                                                                                                                      filenames,
                                                                                                                      err)

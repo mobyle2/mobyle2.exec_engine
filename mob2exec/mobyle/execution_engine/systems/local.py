@@ -40,8 +40,8 @@ class Local(ExecutionSystem):
             self._log.critical(msg)
             raise InternalError(message = msg)
         service_name = job.service.name
-        with open(os.path.join(job_dir,  service_name + '.out'), 'w') as fout:
-            with open(os.path.join(job_dir,service_name + '.err'), 'w') as ferr:
+        with open(os.path.join(job_dir, service_name + '.out'), 'w') as fout:
+            with open(os.path.join(job_dir, service_name + '.err'), 'w') as ferr:
                 try:
                     # the new process launch by popen must be a session leader
                     # because the pid store in job is the pid of the wrapper
@@ -99,7 +99,8 @@ class Local(ExecutionSystem):
                 except Exception as err:
                     msg = "cannot read job return value for {job_dir}: {err}".format(job_dir = job_dir, err = err)
                     self._log.error(msg, exc_info = True)
-                    status = Status.ERROR
+                    job.status.state = Status.ERROR
+                    job.save()
                     raise InternalError(message = msg)
                 if return_code == 0:
                     status = Status.FINISHED

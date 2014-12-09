@@ -89,23 +89,27 @@ class Evaluator(object):
         self._fill_evaluator(self._evaluator)
         
         
-    def _pre_process_data(self, data):
+    def __setitem__(self, param_name, value):
         """
-        :param data: the data to get the value 
-        :type data: :class:`mobyle.common.data.AbstractData` instance or None
-        :return: the value of a data ready to put it in the evaluator
-        :rtype: any 
+        set the value directly in the evaluation namespace without any transformation
+        
+        :param param_name: the name of the service parameter to set a new value
+        :type param_name: string
+        :param value: the value to assign to the parameter
+        :type value: any
         """
-        if data is None:
-            value = None
-        elif isinstance(data, ListData):
-            value = data.expr_value()
-            value.sort()
-        else:
-            #RefData, ValueData, StructData
-            value = data.expr_value()
-        return value
-    
+        self._evaluator[param_name] = value
+        
+        
+    def __getitem__(self, param_name):
+        """
+        get the value corresponding to param_name from the evaluation namespace without any transformation.
+        
+        :param param_name: the name of the service parameter to set a new value
+        :type param_name: string
+        """
+        return self._evaluator[param_name]
+        
     
     def _fill_evaluator(self, evaluator):
         """
@@ -125,10 +129,27 @@ class Evaluator(object):
                 if value_data is None:
                     # if there is no vdef default_value return None
                     value_data = parameter.default_value
-                value = self._pre_process_data(value_data)
+                value = self.pre_process_data(value_data)
                 job_log.debug('{0} = {1}'.format(parameter.name, value))
                 evaluator[parameter.name] = value
             job_log.debug("evaluator = {0}".format(evaluator))
+    
+    
+    def pre_process_data(self, data):
+        """
+        :param data: the data to get the value 
+        :type data: :class:`mobyle.common.data.AbstractData` instance or None
+        :return: the value of a data ready to put it in the evaluator
+        :rtype: any 
+        """
+        if data is None:
+            value = None
+        elif isinstance(data, ListData):
+            value = data.expr_value()
+        else:
+            #RefData, ValueData, StructData
+            value = data.expr_value()
+        return value
     
     
     def eval_precond(self, preconds, job_log):
@@ -265,7 +286,7 @@ class CommandBuilder(Evaluator):
                             raise InternalError(msg)
                  
                 vdef_data = parameter.default_value
-                vdef = self._pre_process_data(vdef_data)
+                vdef = self.pre_process_data(vdef_data)
                 self._evaluator['vdef'] = vdef
                 build_log.debug("vdef = {0}".format(vdef))
                 value = self._evaluator[parameter.name]

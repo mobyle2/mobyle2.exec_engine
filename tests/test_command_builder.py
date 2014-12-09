@@ -11,11 +11,10 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status
-from mobyle.common.job import CustomStatus
-from mobyle.common.job import ProgramJob
-from mobyle.common.service import *
+from mobyle.common.data import ListData, ValueData
 from mobyle.common.type import *
+from mobyle.common.job import Status, CustomStatus, ProgramJob
+from mobyle.common.service import *
 from mobyle.common.error import InternalError, UserValueError
 from mobyle.execution_engine.evaluator import Evaluator, CommandBuilder, JobLogger
 
@@ -93,7 +92,50 @@ class TestEvaluator(unittest.TestCase):
         os.chdir(self.cwd)
         shutil.rmtree(self.test_dir)
         
+    def test_pre_process_data(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        ev = Evaluator(job, job.log_file_name)
+        v = ValueData()
+        v['type'] = BooleanType()
+        v['value'] = True
+        preprocess_value = ev.pre_process_data(v)
+        self.assertEqual(preprocess_value, True)
+        v = ListData()
+        v['type'] = ArrayType(StringType())
+        el1 = ValueData()
+        el1['type'] = StringType()
+        el1['value'] = 'foo'
+        el2 = ValueData()
+        el2['type'] = StringType()
+        el2['value'] = 'bar'
+        v['value'] = [el1, el2]
+        preprocess_value = ev.pre_process_data(v)
+        self.assertEqual(preprocess_value, ['foo', 'bar'])
         
+    def test_item_accessor(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world',
+                            'e': 'true'}
+        job.process_inputs(parameter_values)
+        job.import_data()
+        job.save()
+        ev = Evaluator(job, job.log_file_name)
+        self.assertEqual(ev['string'], 'hello world')
+        ev['string'] = 'peekaboo'
+        self.assertEqual(ev['string'], 'peekaboo')
+
+    
+    
     def test_eval_precond(self):
         #parameter with precond     
         job = connection.ProgramJob()

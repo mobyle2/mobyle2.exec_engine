@@ -83,14 +83,14 @@ class StatusActor(Actor):
             for parameter in program.outputs_list():
                 job_log.debug("------output parameter {0} ------".format(parameter.name))
                 vdef_data = parameter.default_value
-                vdef = self._pre_process_data(vdef_data)
+                vdef = evaluator.pre_process_data(vdef_data)
                 evaluator['vdef'] = vdef
                 job_log.debug("vdef = {0}".format(vdef))
                 value = evaluator[parameter.name]
                 evaluator['value'] = value
                 job_log.debug("value = {0}".format(value))
                 preconds = parameter.preconds
-                all_preconds_true = self.eval_precond(preconds, job_log)    
+                all_preconds_true = evaluator.eval_precond(preconds, job_log)    
                 if not all_preconds_true :
                     job_log.debug("all preconds are not True: next parameter")
                     continue #next parameter
@@ -125,8 +125,8 @@ class StatusActor(Actor):
                             for one_file in result_files:
                                 data = RefData()
                                 data['type'] = parameter.type
-                                data['path'] = one_file[0]
-                                data['size'] = os.path.getsize(one_file[0])
+                                data['path'] = one_file
+                                data['size'] = os.path.getsize(one_file)
                                 list_of_data.append(data)
                             data['value'] = list_of_data
                         job['outputs'][parameter.name] = data

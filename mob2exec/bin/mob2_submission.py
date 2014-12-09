@@ -143,6 +143,24 @@ def program_generator():
 
     program_1['inputs']['children'].append(bank)
     program_1['inputs']['children'].append(seq_id)
+    
+    program_1['outputs'] = OutputParagraph()
+    stdout = OutputProgramParameter()
+    stdout['name'] = 'stdout'
+    sequence_type = FormattedType()
+    sequence_type['format_terms'] = ['EDAM_format:0849']
+    stdout['type'] = sequence_type
+    stdout['filenames'] = "'golden.out'"
+    program_1['outputs']['children'].append(stdout)
+    
+    stderr = OutputProgramParameter()
+    stderr['name'] = 'stderr'
+    sequence_type = FormattedType()
+    sequence_type['format_terms'] = ['EDAM_format:1964']
+    stderr['type'] = sequence_type
+    stderr['filenames'] = "'golden.err'"
+    program_1['outputs']['children'].append(stderr)
+    
     program_1.save()
     
 #     program_2 = connection.Program()

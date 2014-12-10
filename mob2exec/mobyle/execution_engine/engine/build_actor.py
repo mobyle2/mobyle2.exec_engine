@@ -82,7 +82,7 @@ class BuildActor(Actor):
         project = job.get_project()
         try:
             job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
-        except Exception, err:
+        except Exception as err:
             msg = "cannot build  the job dir the database may be corrupted project dir: {},  job id: {}".format(project.dir, job.id)
             self._log.critical(msg, exc_info=True)
             raise InternalError(msg)
@@ -92,7 +92,7 @@ class BuildActor(Actor):
             raise InternalError(msg)
         try:
             os.makedirs(job_dir, 0755) #create parent directory
-        except Exception , err:
+        except Exception as err:
             self._log.critical( "unable to create job directory {0}: {1} ".format(job_dir, err), exc_info = True)
             raise InternalError , "Internal server Error"
         os.umask(0022)

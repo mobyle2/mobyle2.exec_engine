@@ -106,7 +106,7 @@ write them on log files.
        
         try:
             self.log_receiver = LogRecordSocketReceiver()
-        except Exception, err:
+        except Exception as err:
             msg = str(err) +" : the port used by logger is already in use. Check if an other mob2exec is not already running"
             sys.exit(msg)
         self.log_server_thread = threading.Thread(target = self.log_receiver.serve_forever)   
@@ -191,7 +191,7 @@ reload : to reload he configuration file without stopping the daemon (not implem
     def communicate(pid, signum): 
         try:    
             os.kill(pid, signum)
-        except OSError, err:
+        except OSError as err:
             print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     

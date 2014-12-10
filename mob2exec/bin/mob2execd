@@ -86,7 +86,7 @@ write them on log files.
                                         'email': {
                                                  'class': 'logging.handlers.SMTPHandler' ,
                                                  'mailhost': self.cfg.get('mob2exec', 'log_email_mta'),
-                                                 'fromaddr': self.cfg.get('mob2exec','log_email_from').split(),
+                                                 'fromaddr': self.cfg.get('mob2exec','log_email_from'), #fromaddr cannot be a list
                                                  'toaddrs' : self.cfg.get('mob2exec','log_email_to').split(),
                                                  'subject' : self.cfg.get('mob2exec','log_email_subject'), 
                                                  'level'   : self.cfg.get('mob2exec','log_email_level'),

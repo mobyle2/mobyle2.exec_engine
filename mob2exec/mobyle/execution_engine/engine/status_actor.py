@@ -69,7 +69,11 @@ class StatusActor(Actor):
         new_status = exec_system.get_status(job)
         if old_status != new_status:
             if new_status.is_ended():
-                job.end_time = datetime.now()
+                if os.path.exists(job.return_value_file):
+                    timestamp = os.path.getmtime(job.return_value_file)
+                    job.end_time = datetime.fromtimestamp(timestamp)
+                else:
+                    job.end_time = datetime.now()
             if new_status == Status(Status.FINISHED):
                 self.get_results(job)
             try:
@@ -128,19 +132,23 @@ class StatusActor(Actor):
                     job_log.debug("mask match = {0}".format(result_files))
                     if result_files:
                         if len(result_files) == 1:
-                            data = RefData()
-                            data['type'] = parameter.type
-                            data['path'] = result_files[0]
-                            data['size'] = os.path.getsize(result_files[0])
+                            size = os.path.getsize(result_files[0])
+                            if size != 0:
+                                data = RefData()
+                                data['type'] = parameter.type
+                                data['path'] = result_files[0]
+                                data['size'] = size
                         else:
                             data = ListData()
                             list_of_data = []
                             for one_file in result_files:
-                                data = RefData()
-                                data['type'] = parameter.type
-                                data['path'] = one_file
-                                data['size'] = os.path.getsize(one_file)
-                                list_of_data.append(data)
+                                size = os.path.getsize(one_file)
+                                if size != 0:
+                                    data = RefData()
+                                    data['type'] = parameter.type
+                                    data['path'] = one_file
+                                    data['size'] = size
+                                    list_of_data.append(data)
                             data['value'] = list_of_data
                         job['outputs'][parameter.name] = data
                     else:

@@ -147,6 +147,7 @@ def program_generator():
     program_1['outputs'] = OutputParagraph()
     stdout = OutputProgramParameter()
     stdout['name'] = 'stdout'
+    stdout['output_type'] = 'stdout'
     sequence_type = FormattedType()
     sequence_type['format_terms'] = ['EDAM_format:0849']
     stdout['type'] = sequence_type
@@ -155,6 +156,7 @@ def program_generator():
     
     stderr = OutputProgramParameter()
     stderr['name'] = 'stderr'
+    stderr['output_type'] = 'stderr'
     sequence_type = FormattedType()
     sequence_type['format_terms'] = ['EDAM_format:1964']
     stderr['type'] = sequence_type

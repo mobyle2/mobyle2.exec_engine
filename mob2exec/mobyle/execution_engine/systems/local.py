@@ -92,7 +92,7 @@ class Local(ExecutionSystem):
             if str(err).find('No such process') != -1:
                 #the process is ended
                 #what is the retun value?
-                with open(os.path.join(job_dir,'.job_return_value'), 'r') as return_file:
+                with open(os.path.join(job_dir, job.return_value_file), 'r') as return_file:
                     return_code = return_file.readline()
                 try:
                     return_code = int(return_code)

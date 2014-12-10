@@ -108,9 +108,9 @@ class BuildActor(Actor):
         exec_script_template = """
 {MODULE_SOURCE}
 {MODULE_LOAD}
-{CMD} ; echo $? > .job_return_value
+{CMD} ; echo $? > {RETURN_VALUE_FILE}
 """
-        script_args = {'CMD' : job.cmd_line}
+        script_args = {'CMD' : job.cmd_line, 'RETURN_VALUE_FILE': job.return_value_file}
         #chercherz dans la config ce qui est relatif a module
         ## BOUCHON
         script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'

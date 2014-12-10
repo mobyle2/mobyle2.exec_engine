@@ -132,17 +132,21 @@ class StatusActor(Actor):
                     job_log.debug("mask match = {0}".format(result_files))
                     if result_files:
                         if len(result_files) == 1:
-                            size = os.path.getsize(result_files[0])
+                            result_file = result_files[0]
+                            size = os.path.getsize(result_file)
+                            job_log.debug("{file} size = {size}".format(file = result_file, size = size))
                             if size != 0:
                                 data = RefData()
                                 data['type'] = parameter.type
                                 data['path'] = result_files[0]
                                 data['size'] = size
+                                job['outputs'][parameter.name] = data
                         else:
                             data = ListData()
                             list_of_data = []
                             for one_file in result_files:
                                 size = os.path.getsize(one_file)
+                                job_log.debug("{file} size = {size}".format(file = one_file, size = size))
                                 if size != 0:
                                     data = RefData()
                                     data['type'] = parameter.type
@@ -150,7 +154,7 @@ class StatusActor(Actor):
                                     data['size'] = size
                                     list_of_data.append(data)
                             data['value'] = list_of_data
-                        job['outputs'][parameter.name] = data
+                            job['outputs'][parameter.name] = data
                     else:
                         continue
             job.save()

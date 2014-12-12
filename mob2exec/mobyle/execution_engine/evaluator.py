@@ -302,7 +302,7 @@ class CommandBuilder(Evaluator):
                 build_log.debug("value = {0}".format(value))
                 try:
                     preconds = parameter.preconds
-                except InternalError, err:
+                except InternalError as err:
                     close_paramfiles()
                     raise
                 all_preconds_true = self.eval_precond(preconds, build_log)    

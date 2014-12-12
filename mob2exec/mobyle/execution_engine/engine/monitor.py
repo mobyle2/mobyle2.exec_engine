@@ -115,7 +115,7 @@ class JtMonitor(multiprocessing.Process):
             for job_id in all_job_ids:
                 try:
                     job = connection.Job.fetch_one({'_id' : job_id})
-                except Exception, err:
+                except Exception as err:
                     self._log.error(str(err), exec_info = True)
                     # TO BE IMPROVE
                     raise err

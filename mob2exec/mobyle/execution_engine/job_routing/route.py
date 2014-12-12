@@ -148,7 +148,7 @@ def get_dispatcher():
     for exec_conf in all_exec_in_conf:
         try:
             klass = exec_klass[exec_conf["class"]]
-        except KeyError, err:
+        except KeyError as err:
             raise ConfigError('class {0} does not exist check your config'.format(exec_conf["class"]))
         opts = exec_conf["drm_options"]
         if opts is None:
@@ -158,7 +158,7 @@ def get_dispatcher():
             opts["native_specifications"] = native_specifications
         try:
             exec_systems[exec_conf["_id"]] = klass(exec_conf["_id"], **opts)
-        except Exception, err:
+        except Exception as err:
             msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
             _log.error(msg)
             raise InternalError(msg)

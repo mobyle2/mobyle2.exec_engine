@@ -16,7 +16,7 @@ _log = logging.getLogger(__name__)
 
 from mobyle.common.connection import connection
 from mobyle.common.config import Config
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import MobyleError, InternalError, ConfigError
 
 from .rules import load_rules 
 
@@ -121,13 +121,13 @@ class Dispatcher(object):
     
     def append(self, route):
         """
-        :param route: a route to appnd to this dispatcher
-        :type route: c'ass:`Route` instance
+        :param route: a route to append to this dispatcher
+        :type route: :class:`Route` instance
         
         """
         self.routes[route.name] = route
     
-    def which_route(self,job):
+    def which_route(self, job):
         """
         :param job: the job to route
         :type job: class:`mobyle.common.job.Job` object
@@ -148,8 +148,8 @@ def get_dispatcher():
     for exec_conf in all_exec_in_conf:
         try:
             klass = exec_klass[exec_conf["class"]]
-        except KeyError, err:
-            raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
+        except KeyError as err:
+            raise ConfigError('class {0} does not exist check your config'.format(exec_conf["class"]))
         opts = exec_conf["drm_options"]
         if opts is None:
             opts = {}
@@ -158,10 +158,10 @@ def get_dispatcher():
             opts["native_specifications"] = native_specifications
         try:
             exec_systems[exec_conf["_id"]] = klass(exec_conf["_id"], **opts)
-        except Exception, err:
+        except Exception as err:
             msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
             _log.error(msg)
-            raise MobyleError(msg)
+            raise InternalError(msg)
     if not exec_systems:
         msg = "No execution systems found in config, set a default one using Local"
         _log.warning(msg)

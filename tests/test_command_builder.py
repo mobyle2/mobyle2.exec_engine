@@ -11,15 +11,165 @@ from mobyle.common.connection import connection
 
 from mobyle.common.users import User
 from mobyle.common.project import Project
-from mobyle.common.job import Status
-from mobyle.common.job import CustomStatus
-from mobyle.common.job import ProgramJob
-from mobyle.common.service import *
+from mobyle.common.data import ListData, ValueData
 from mobyle.common.type import *
-from mobyle.common.mobyleError import MobyleError, UserValueError
-from mobyle.execution_engine.command_builder import CommandBuilder, BuildLogger
+from mobyle.common.job import Status, CustomStatus, ProgramJob
+from mobyle.common.service import *
+from mobyle.common.error import InternalError, UserValueError
+from mobyle.execution_engine.evaluator import Evaluator, CommandBuilder, JobLogger
 
 
+class TestEvaluator(unittest.TestCase):
+    
+    
+    def setUp(self):
+        self.test_dir = '/tmp/test_mob2_exec_engine'
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
+
+        os.makedirs(self.test_dir)
+        self.cwd = os.getcwd()
+        os.chdir(self.test_dir)
+           
+        connection.ProgramJob.collection.remove({})
+        connection.User.collection.remove({})
+        connection.Project.collection.remove({})
+        
+        self.user = connection.User()
+        self.user['email'] = 'foo@bar.fr'
+        self.user.save()
+        
+        self.project = connection.Project()
+        self.project['owner'] = self.user['_id']
+        self.project['name'] = 'MyProject'
+        self.project.save()
+        
+        self.status = Status(Status.INIT)
+        
+        #build a test service
+        self.program = connection.Program()
+        self.program['name'] = 'echo'
+        self.program['command'] = 'echo '
+        self.inputs = InputParagraph()
+        self.outputs = OutputParagraph()
+        self.program['inputs'] = self.inputs
+        self.program['outputs'] = self.outputs
+        self.input_string = InputProgramParameter()
+        self.input_string['name'] = 'string'
+        self.input_string['argpos'] = 99
+        self.input_string['format'] = '" " + value'
+        input_string_type = StringType()
+        self.input_string['type'] = input_string_type
+        input_options = InputProgramParagraph()
+        input_options['argpos'] = 2
+        input_n = InputProgramParameter()
+        # n has no argpos, its argpos will be 2
+        input_n['type'] = BooleanType()
+        input_n['name'] = 'n'
+        input_n['format'] = '" -n " if value else ""'
+        input_options['children'].append(input_n)
+        # e has an argpos of 3
+        self.input_e = InputProgramParameter()
+        self.input_e['type'] = BooleanType()
+        self.input_e['argpos'] = 3
+        self.input_e['name'] = 'e'
+        self.input_e['format'] = '" -e " if value else ""'
+        self.input_e['precond'] = {'n': True}
+        input_options['children'].append(self.input_e)
+        self.program['inputs']['children'].append(self.input_string)
+        self.program['inputs']['children'].append(input_options)
+        output_stdout = OutputProgramParameter()
+        output_stdout['name'] = 'stdout'
+        output_stdout['output_type'] = u'stdout'
+        output_stdout_type = FormattedType()
+        output_stdout['type'] = output_stdout_type
+        self.program['outputs']['children'].append(output_stdout)
+        self.program.init_ancestors()
+        self.program.save()
+        
+        
+    def tearDown(self):
+        os.chdir(self.cwd)
+        shutil.rmtree(self.test_dir)
+        
+    def test_pre_process_data(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        ev = Evaluator(job, job.log_file_name)
+        v = ValueData()
+        v['type'] = BooleanType()
+        v['value'] = True
+        preprocess_value = ev.pre_process_data(v)
+        self.assertEqual(preprocess_value, True)
+        v = ListData()
+        v['type'] = ArrayType(StringType())
+        el1 = ValueData()
+        el1['type'] = StringType()
+        el1['value'] = 'foo'
+        el2 = ValueData()
+        el2['type'] = StringType()
+        el2['value'] = 'bar'
+        v['value'] = [el1, el2]
+        preprocess_value = ev.pre_process_data(v)
+        self.assertEqual(preprocess_value, ['foo', 'bar'])
+        
+    def test_item_accessor(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world',
+                            'e': 'true'}
+        job.process_inputs(parameter_values)
+        job.import_data()
+        job.save()
+        ev = Evaluator(job, job.log_file_name)
+        self.assertEqual(ev['string'], 'hello world')
+        ev['string'] = 'peekaboo'
+        self.assertEqual(ev['string'], 'peekaboo')
+
+    def test_eval(self):
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world',
+                            'e': 'true'}
+        job.process_inputs(parameter_values)
+        job.import_data()
+        job.save()
+        ev = Evaluator(job, job.log_file_name)
+        self.assertEqual('hello world', ev.eval('string'))
+    
+    def test_eval_precond(self):
+        #parameter with precond     
+        job = connection.ProgramJob()
+        job['status'] = self.status
+        job['project'] = self.project.id
+        job['service'] = self.program
+        job.dir = self.test_dir
+        job['inputs'] = {}
+        parameter_values = {'string':'hello world',
+                            'e': 'true'}
+        job.process_inputs(parameter_values)
+        job.import_data()
+        job.save()
+        ev = Evaluator(job, job.log_file_name)
+        with JobLogger(job.log_file_name) as job_log:
+            precond = ev.eval_precond([{'string': 'hello world' }], job_log)
+            self.assertTrue(precond)
+            precond = ev.eval_precond([{'e': True}, {'string': 'false'}], job_log)
+            self.assertFalse(precond)                            
+        
+        
 class TestCommandBuilder(unittest.TestCase):
     
     
@@ -81,13 +231,12 @@ class TestCommandBuilder(unittest.TestCase):
         self.program['inputs']['children'].append(input_options)
         output_stdout = OutputProgramParameter()
         output_stdout['name'] = 'stdout'
-        output_stdout['output_type'] = 'stdout'
+        output_stdout['output_type'] = u'stdout'
         output_stdout_type = FormattedType()
         output_stdout['type'] = output_stdout_type
         self.program['outputs']['children'].append(output_stdout)
         self.program.init_ancestors()
         self.program.save()
-        
         
     def tearDown(self):
         os.chdir(self.cwd)
@@ -103,9 +252,10 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo hello world')
         
@@ -118,22 +268,24 @@ class TestCommandBuilder(unittest.TestCase):
         job.dir = self.test_dir
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True}
+                            'e': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo hello world')
 
         job['inputs'] = {}
         parameter_values = {'string':'hello world',
-                            'e': True,
-                            'n': True}
+                            'e': 'true',
+                            'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
         
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo -n -e hello world')
         
@@ -149,32 +301,36 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo \\"hello world\\"')
         
         job['inputs'] = {}
         parameter_values = {'string':'hello @world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo hello \@world')
         
         job['inputs'] = {}
         parameter_values = {'string':'_SQ_hello world_SQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, "echo \'hello world\'")
         
         job['inputs'] = {}
         parameter_values = {'string':'_DQ_hello world_DQ_'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo \"hello world\"')
         
@@ -191,17 +347,20 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'hello world'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.check_mandatory()
         self.assertTrue(cl)
         
         #mandatory without value
         job['inputs'] = {}
+        job['exec_inputs'] = {}
         parameter_values = {}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         with self.assertRaises(UserValueError) as context:
             cl = cb.check_mandatory()
             parameters = context.exception.parameters
@@ -213,10 +372,11 @@ class TestCommandBuilder(unittest.TestCase):
         self.program.init_ancestors()
         self.program.save()
         job['inputs'] = {}
-        parameter_values = {'string':'"hello world"', 'n':True}
+        parameter_values = {'string':'"hello world"', 'n':'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         with self.assertRaises(UserValueError) as context:
             cl = cb.check_mandatory()
         parameters = context.exception.parameters
@@ -229,8 +389,9 @@ class TestCommandBuilder(unittest.TestCase):
         job['inputs'] = {}
         parameter_values = {'string':'"hello world"'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         self.assertTrue(cl)
         
     def test_parameter_before_cmd(self):
@@ -249,10 +410,11 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, "ln -s toto titi && echo -n -e hello world")
         
@@ -273,10 +435,11 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         cl = cb.build_command()
         self.assertEqual(cl, 'echo -n -e hello world')
         
@@ -287,10 +450,11 @@ class TestCommandBuilder(unittest.TestCase):
         job['service'] = self.program
         job.dir = self.test_dir
         job['inputs'] = {}
-        parameter_values = {'string':'hello world', 'e': True, 'n': True}
+        parameter_values = {'string':'hello world', 'e': 'true', 'n': 'true'}
         job.process_inputs(parameter_values)
+        job.import_data()
         job.save()
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
         build_env = cb.build_env()
         self.assertDictEqual(build_env, {})
         

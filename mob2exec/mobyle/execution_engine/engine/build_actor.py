@@ -14,8 +14,8 @@ import setproctitle
 import os
 
 from mobyle.common.job import Status       
-from mobyle.common.mobyleError import MobyleError, UserValueError
-from ..command_builder import CommandBuilder
+from mobyle.common.error import MobyleError, InternalError
+from mobyle.execution_engine.evaluator import CommandBuilder
 from .actor import Actor
 
 class BuildActor(Actor):
@@ -46,57 +46,30 @@ class BuildActor(Actor):
         
         self.make_job_environement(job)
         os.chdir(job.dir)
+        job.import_data()
         
-        #import data needed for the job
-       
         #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
         
-        #perform data conversion
-        #how to decide which data must be convert?
-        
-        # the acces log must record 
-        # the submited jobs to mobyle 
-        #  or
-        # the submitted job to execution?
-        #
-        #acc_log = logging.getLogger( 'access')
-        #acc_log.info( "test access log {0}".format(self._name))
-        
-        #the monitor is now aware of the new status
-        
-        cb = CommandBuilder(job)
+        cb = CommandBuilder(job, job.log_file_name)
+        err = None
         try:
-            mandatory_checked = cb.check_mandatory()
-        except UserValueError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        except MobyleError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        try:
-            ctrls_checked = cb.check_ctrls()
-        except UserValueError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        except MobyleError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        try:
-            cmd_line = cb.build_command() 
+            cb.check_mandatory()
+            cb.check_ctrl()
+            cmd_line = cb.build_command()
             job.cmd_line = cmd_line
-        except MobyleError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        try:
             job_env =  cb.build_env()
             job.cmd_env = job_env
         except MobyleError as err:
-            job.status.state = Status.ERROR
-            job.message = str(err)
-        if not err:
-            job.status.state = Status.TO_BE_SUBMITTED
-        job.save()
+            job.set_error(err)
+            self._log.error(str(err))
+        else:
+            if job.status.state != Status.ERROR:
+                job.status.state = Status.TO_BE_SUBMITTED
+        finally:
+            job.save()
+            
+        self.make_script(job)   
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
     
     
@@ -109,19 +82,39 @@ class BuildActor(Actor):
         project = job.get_project()
         try:
             job_dir = os.path.abspath(os.path.join(project.dir, 'jobs', str(job.id)))
-        except Exception, err:
+        except Exception as err:
             msg = "cannot build  the job dir the database may be corrupted project dir: {},  job id: {}".format(project.dir, job.id)
-            self._log.critical(msg)
-            raise MobyleError(msg)
+            self._log.critical(msg, exc_info=True)
+            raise InternalError(msg)
         if os.path.exists(job_dir):
-                msg = 'cannot make job directory: {0} already exists'.format(job_dir)
-                self._log.error(msg)
-                raise MobyleError(msg)
+            msg = 'cannot make job directory: {0} already exists'.format(job_dir)
+            self._log.error(msg)
+            raise InternalError(msg)
         try:
             os.makedirs(job_dir, 0755) #create parent directory
-        except Exception , err:
+        except Exception as err:
             self._log.critical( "unable to create job directory {0}: {1} ".format(job_dir, err), exc_info = True)
-            raise MobyleError , "Internal server Error"
+            raise InternalError , "Internal server Error"
         os.umask(0022)
         job.dir = job_dir
         
+        
+    def make_script(self, job):
+        """
+        create the script which will be submited by 
+        the SubmitActor
+        """
+        
+        exec_script_template = """
+{MODULE_SOURCE}
+{MODULE_LOAD}
+{CMD} ; echo $? > {RETURN_VALUE_FILE}
+"""
+        script_args = {'CMD' : job.cmd_line, 'RETURN_VALUE_FILE': job.return_value_file}
+        #chercherz dans la config ce qui est relatif a module
+        ## BOUCHON
+        script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'
+        script_args['MODULE_LOAD'] ='# ici devrai apparaitre le module load'
+        exec_script = exec_script_template.format(**script_args)
+        with open('.job_script', 'w') as script_file:
+            script_file.write(exec_script)

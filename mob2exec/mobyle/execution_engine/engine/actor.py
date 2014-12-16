@@ -11,13 +11,12 @@
 
 
 import multiprocessing
-import os
 from abc import ABCMeta, abstractmethod
 
 from mobyle.common.connection import connection
 from mobyle.common.job import ProgramJob
 from mobyle.common.job_routing_model import ExecutionSystem
-from mobyle.common.mobyleError import MobyleError
+from mobyle.common.error import InternalError
 from mobyle.execution_engine.systems.execution_system import load_execution_classes
 
 
@@ -47,7 +46,7 @@ class Actor(multiprocessing.Process):
         """       
         try:
             job = connection.Job.fetch_one({'_id' : self.job_id})
-        except Exception, err:
+        except Exception as err:
             self._log.error(str(err), exc_info = True)
             # TO BE IMPROVE
             raise err
@@ -66,14 +65,14 @@ class Actor(multiprocessing.Process):
         """  
         try:
             exec_conf = connection.ExecutionSystem.fetch_one({'_id' : exec_name})
-        except Exception, err:
+        except Exception as err:
             self._log.error(str(err), exc_info = True)
             raise err
         exec_klasses = load_execution_classes()
         try:
             klass = exec_klasses[exec_conf["class"]]
-        except KeyError, err:
-            raise MobyleError('class {0} does not exist check your config'.format(exec_conf["class"]))
+        except KeyError as err:
+            raise InternalError('class {0} does not exist check your config'.format(exec_conf["class"]))
         opts = exec_conf["drm_options"]
         if opts is None:
             opts = {}
@@ -82,10 +81,10 @@ class Actor(multiprocessing.Process):
             opts["native_specifications"] = native_specifications
         try:
             execution_system = klass(exec_conf["_id"], **opts)
-        except Exception, err:
+        except Exception as err:
             msg = 'cannot instantiate class {0} : {1}'.format(exec_conf["class"]), err
             self._log.error(msg)
-            raise MobyleError(msg)
+            raise InternalError(msg)
         
         return execution_system
         

@@ -7,4 +7,5 @@ __all__ = ['jobstable' ,
            'notification_actor', 
            'status_actor', 
            'submit_actor',
+           'evaluator'
            ]

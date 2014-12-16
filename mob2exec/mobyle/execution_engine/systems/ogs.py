@@ -21,4 +21,4 @@ class OgsDRMAA(DRMAA):
         os.environ['SGE_ROOT'] = root
         os.environ['SGE_CELL'] = cell
         if sge_qmaster_port != 6444:
-            os.environ['SGE_QMASTER_PORT'] = SGE_QMASTER_PORT
+            os.environ['SGE_QMASTER_PORT'] = sge_qmaster_port

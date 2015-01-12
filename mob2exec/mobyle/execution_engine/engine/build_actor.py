@@ -2,7 +2,7 @@
 
 #===============================================================================
 # Created on Aug 13, 2013
-# 
+#
 # @author: Bertrand Néron
 # @contact: bneron <at> pasteur <dot> fr
 # @organization: Institut Pasteur
@@ -13,44 +13,45 @@ import logging.config
 import setproctitle
 import os
 
-from mobyle.common.job import Status       
+from mobyle.common.job import Status
 from mobyle.common.error import MobyleError, InternalError
 from mobyle.execution_engine.evaluator import CommandBuilder
 from .actor import Actor
+from .docker import DockerContainer
 
 class BuildActor(Actor):
     """
     submit job to the execution system.
     """
-    
+
 
     def __init__(self, job_id, log_conf):
         """
         :param job_id: the id of the job to treat
         :type job_id: string
-        
+
         """
         super(BuildActor, self).__init__(job_id, log_conf)
-           
+
     def run(self):
         self._name = "BuildActor-{0:d} job {1}".format(self.pid, self.job_id)
         setproctitle.setproctitle('mob2_build')
-        
+
         logging.config.dictConfig(self._log_conf)
-        self._log = logging.getLogger(__name__) 
-        
-        #change the status to aware the job that this job is currently building  
+        self._log = logging.getLogger(__name__)
+
+        #change the status to aware the job that this job is currently building
         job = self.get_job()
         job.status.state = Status.BUILDING
         job.save()
-        
+
         self.make_job_environement(job)
         os.chdir(job.dir)
         job.import_data()
-        
+
         #build the cmdline??? seulement pour ProgramJob ???
         #ou action generique de job et joue sur le polymorphism?
-        
+
         cb = CommandBuilder(job, job.log_file_name)
         err = None
         try:
@@ -68,11 +69,11 @@ class BuildActor(Actor):
                 job.status.state = Status.TO_BE_SUBMITTED
         finally:
             job.save()
-            
-        self.make_script(job)   
+
+        self.make_script(job)
         self._log.info( "{0} put job {1} with status {2} in table".format(self._name, job.id, job.status))
-    
-    
+
+
     def make_job_environement(self, job):
         """
         create the environment to run a job
@@ -97,14 +98,13 @@ class BuildActor(Actor):
             raise InternalError , "Internal server Error"
         os.umask(0022)
         job.dir = job_dir
-        
-        
+
+
     def make_script(self, job):
         """
-        create the script which will be submited by 
+        create the script which will be submited by
         the SubmitActor
         """
-        
         exec_script_template = """
 {MODULE_SOURCE}
 {MODULE_LOAD}
@@ -116,5 +116,13 @@ class BuildActor(Actor):
         script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'
         script_args['MODULE_LOAD'] ='# ici devrai apparaitre le module load'
         exec_script = exec_script_template.format(**script_args)
-        with open('.job_script', 'w') as script_file:
-            script_file.write(exec_script)
+        if 'containers' in job.service and len(job.service['containers']) > 0:
+          with open('.'+job.service['containers'][0]['type']+'_job_script', 'w') as script_file:
+              script_file.write(exec_script)
+          with open('.job_script', 'w') as script_file:
+              container = DockerContainer()
+              script_file.write(container.build_pull_command(job)+"\n")
+              script_file.write(container.build_run_command(job)+"\n")
+        else:
+          with open('.job_script', 'w') as script_file:
+              script_file.write(exec_script)

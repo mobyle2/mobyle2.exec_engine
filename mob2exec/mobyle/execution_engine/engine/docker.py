@@ -39,7 +39,7 @@ class DockerContainer(object):
     :type job: Job
     '''
     cmd = ''
-    # Create user and group
+    # Get user and group
     cmd += 'uid=`id -u`'+"\n"
     cmd += 'gid=`id -g`'+"\n"
     container = job.service['containers'][0]
@@ -54,6 +54,10 @@ class DockerContainer(object):
       for key, value in self.env_vars.iteritems():
         cmd += ' -e "'+key+'='+value+'"'
     cmd += ' '+container['id'] # Image Id
+    cmd += ' bash -c "'
+    # Create user and group
     cmd += 'groupadd --gid $gid mobyle && useradd --uid $uid --gid $gid mobyle;'
-    cmd += '/bin/sh '+'.'+job.service['containers'][0]['type']+'_job_script' # Cmd
+    # Execute command in container
+    cmd += '/bin/sh '+'.'+job.service['containers'][0]['type']+'_job_script;'
+    cmd += 'chown -R $uid:$gid '+job['_dir']+'"' # Reset file access rights
     return cmd

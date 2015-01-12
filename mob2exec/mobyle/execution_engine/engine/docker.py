@@ -1,4 +1,5 @@
 import os
+from mobyle.common.config import Config
 
 class DockerContainer(object):
   '''
@@ -13,9 +14,16 @@ class DockerContainer(object):
     :type env: dict
     :param volumes: list of volumes to mount in addition to job directory
     :type volumes: list
+    :param sudo: Use sudo
+    :type sudo: bool
     '''
     self.env_vars = env_vars
     self.volumes = volumes
+    cfg = Config.config()
+    if cfg.get("app:main", "use_sudo") and cfg.get("app:main", "use_sudo") == 'true':
+      self.sudo = "sudo "
+    else:
+      self.sudo = ""
 
 
   def build_pull_command(self, job):
@@ -26,7 +34,7 @@ class DockerContainer(object):
     :type job: Job
     '''
     container = job.service['containers'][0]
-    cmd = 'sudo docker pull '+container['url']+' > .'+container['type']+'.stdout'
+    cmd = self.sudo + 'docker pull '+container['url']+' > .'+container['type']+'.stdout'
     return cmd
 
 
@@ -43,7 +51,7 @@ class DockerContainer(object):
     cmd += 'uid=`id -u`'+"\n"
     cmd += 'gid=`id -g`'+"\n"
     container = job.service['containers'][0]
-    cmd += 'sudo docker run '
+    cmd += self.sudo + 'docker run '
     cmd += ' --rm'  #For deletion after execution for cleanup
     cmd += ' -w '+job['_dir'] # Workdir
     cmd += ' -v '+job['_dir']+':'+job['_dir'] #Mount job directory as a shared directory

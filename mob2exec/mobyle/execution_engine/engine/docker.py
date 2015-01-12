@@ -29,6 +29,8 @@ class DockerContainer(object):
     cmd = 'sudo docker pull '+container['url']+' > .'+container['type']+'.stdout'
     return cmd
 
+
+
   def build_run_command(self, job):
     '''
     Builds the execution command
@@ -36,8 +38,12 @@ class DockerContainer(object):
     :param job: Current job
     :type job: Job
     '''
+    cmd = ''
+    # Create user and group
+    cmd += 'uid=`id -u`'+"\n"
+    cmd += 'gid=`id -g`'+"\n"
     container = job.service['containers'][0]
-    cmd = 'sudo docker run '
+    cmd += 'sudo docker run '
     cmd += ' --rm'  #For deletion after execution for cleanup
     cmd += ' -w '+job['_dir'] # Workdir
     cmd += ' -v '+job['_dir']+':'+job['_dir'] #Mount job directory as a shared directory
@@ -48,5 +54,6 @@ class DockerContainer(object):
       for key, value in self.env_vars.iteritems():
         cmd += ' -e "'+key+'='+value+'"'
     cmd += ' '+container['id'] # Image Id
-    cmd += ' /bin/sh '+'.'+job.service['containers'][0]['type']+'_job_script' # Cmd
+    cmd += 'groupadd --gid $gid mobyle && useradd --uid $uid --gid $gid mobyle;'
+    cmd += '/bin/sh '+'.'+job.service['containers'][0]['type']+'_job_script' # Cmd
     return cmd

@@ -15,6 +15,7 @@ import os
 
 from mobyle.common.job import Status
 from mobyle.common.error import MobyleError, InternalError
+from mobyle.common.mobyleConfig import MobyleConfig
 from mobyle.execution_engine.evaluator import CommandBuilder
 from .actor import Actor
 from .docker import DockerContainer
@@ -116,13 +117,23 @@ class BuildActor(Actor):
         script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'
         script_args['MODULE_LOAD'] ='# ici devrai apparaitre le module load'
         exec_script = exec_script_template.format(**script_args)
+        use_container = False
         if 'containers' in job.service and len(job.service['containers']) > 0:
-          with open('.'+job.service['containers'][0]['type']+'_job_script', 'w') as script_file:
-              script_file.write(exec_script)
-          with open('.job_script', 'w') as script_file:
-              container = DockerContainer()
-              script_file.write(container.build_pull_command(job)+"\n")
-              script_file.write(container.build_run_command(job)+"\n")
-        else:
+          mconfig = MobyleConfig.get_current()
+          # Test allowed containers
+          for container in job.service['containers']:
+            # Is container allowed ?
+            if mconfig['containers'][container['type']]:
+              # Container is allowed, use it
+              use_container = True
+              with open('.'+container['type']+'_job_script', 'w') as script_file:
+                  script_file.write(exec_script)
+              with open('.job_script', 'w') as script_file:
+                  jobcontainer = DockerContainer(env_vars=job.cmd_env)
+                  script_file.write(jobcontainer.build_pull_command(job)+"\n")
+                  script_file.write(jobcontainer.build_run_command(job)+"\n")
+              break
+        # No container defined or allowed
+        if not use_container:
           with open('.job_script', 'w') as script_file:
               script_file.write(exec_script)

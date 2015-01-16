@@ -125,11 +125,14 @@ class BuildActor(Actor):
             # Is container allowed ?
             if mconfig['containers'][container['type']]:
               # Container is allowed, use it
+              jobcontainer = None
+              # Get class for container
+              if container['type'] == 'docker':
+                jobcontainer = DockerContainer(env_vars=job.cmd_env)
               use_container = True
               with open('.'+container['type']+'_job_script', 'w') as script_file:
                   script_file.write(exec_script)
               with open('.job_script', 'w') as script_file:
-                  jobcontainer = DockerContainer(env_vars=job.cmd_env)
                   script_file.write(jobcontainer.build_pull_command(job)+"\n")
                   script_file.write(jobcontainer.build_run_command(job)+"\n")
               break

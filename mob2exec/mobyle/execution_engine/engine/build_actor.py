@@ -111,7 +111,8 @@ class BuildActor(Actor):
 {MODULE_LOAD}
 {CMD} ; echo $? > {RETURN_VALUE_FILE}
 """
-        script_args = {'CMD' : job.cmd_line, 'RETURN_VALUE_FILE': job.return_value_file}
+        script_args = {'CMD' : job.cmd_line, 
+                       'RETURN_VALUE_FILE': job.return_value_file}
         #chercherz dans la config ce qui est relatif a module
         ## BOUCHON
         script_args['MODULE_SOURCE'] = '# ici devrai apparaitre le module source'
@@ -119,24 +120,24 @@ class BuildActor(Actor):
         exec_script = exec_script_template.format(**script_args)
         use_container = False
         if 'containers' in job.service and len(job.service['containers']) > 0:
-          mconfig = MobyleConfig.get_current()
-          # Test allowed containers
-          for container in job.service['containers']:
-            # Is container allowed ?
-            if mconfig['containers'][container['type']]:
-              # Container is allowed, use it
-              jobcontainer = None
-              # Get class for container
-              if container['type'] == 'docker':
-                jobcontainer = DockerContainer(env_vars=job.cmd_env)
-              use_container = True
-              with open('.'+container['type']+'_job_script', 'w') as script_file:
-                  script_file.write(exec_script)
-              with open('.job_script', 'w') as script_file:
-                  script_file.write(jobcontainer.build_pull_command(job)+"\n")
-                  script_file.write(jobcontainer.build_run_command(job)+"\n")
-              break
+            mconfig = MobyleConfig.get_current()
+            # Test allowed containers
+            for container in job.service['containers']:
+                # Is container allowed ?
+                if mconfig['containers'][container['type']]:
+                    # Container is allowed, use it
+                    jobcontainer = None
+                    # Get class for container
+                if container['type'] == 'docker':
+                    jobcontainer = DockerContainer(env_vars=job.cmd_env)
+                use_container = True
+                with open('.'+container['type']+'_job_script', 'w') as script_file:
+                    script_file.write(exec_script)
+                with open('.job_script', 'w') as script_file:
+                    script_file.write(jobcontainer.build_pull_command(job)+"\n")
+                    script_file.write(jobcontainer.build_run_command(job)+"\n")
+                break
         # No container defined or allowed
         if not use_container:
-          with open('.job_script', 'w') as script_file:
-              script_file.write(exec_script)
+            with open('.job_script', 'w') as script_file:
+                script_file.write(exec_script)

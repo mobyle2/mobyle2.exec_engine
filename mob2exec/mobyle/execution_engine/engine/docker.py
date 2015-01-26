@@ -1,4 +1,7 @@
 import os
+import pwd
+import grp
+
 from mobyle.common.config import Config
 
 class DockerContainer(object):
@@ -23,10 +26,8 @@ class DockerContainer(object):
         else:
             self.sudo = ""
             
-        ###### BOUCHON ####
-        #a mettre dans la config general avec une valeur par default ?    
-        self.group_mobyle = "mobyle"
-        self.user_mobyle = "mobyle"
+        self.group_mobyle = pwd.getpwuid(os.geteuid())
+        self.user_mobyle = grp.getgrgid(os.getegid())
 
 
     def build_pull_command(self, job):

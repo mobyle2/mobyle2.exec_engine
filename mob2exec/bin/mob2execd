@@ -160,6 +160,12 @@ if __name__ == '__main__':
     import signal
     import lockfile.pidlockfile
     import daemon
+    import pwd
+    import grp
+    import warnings
+    
+    from ConfigParser import NoOptionError
+    
     from mobyle.common.error import ConfigError
     
     parser = argparse.ArgumentParser(description = "mob2exec is the execution engine of mobyle2")
@@ -187,7 +193,7 @@ reload : to reload he configuration file without stopping the daemon (not implem
         raise ConfigError("cannot access {0}: No such file ".format(config_path))
     cfg = Config(config_path).config()
     
-
+    
     def communicate(pid, signum): 
         try:    
             os.kill(pid, signum)
@@ -195,7 +201,39 @@ reload : to reload he configuration file without stopping the daemon (not implem
             print >> sys.stderr, "{0} (pid= {1:d} not responding: {2}".format(sys.argv[0], pid , err)    
            
     
+    def switch_id():
+        """
+        switch to uid/gid specify in conf if effecive uid is root
+        """
+        launched_euid = os.geteuid()
+        if launched_euid == 0:
+            try:
+                mobyle_user_cfg = cfg.get('mob2exec', 'mobyle_user')
+            except NoOptionError:
+                mobyle_user_cfg = 'mobyle'
+            try:
+                mobyle_grp_cfg = cfg.get('mob2exec', 'mobyle_group')
+            except NoOptionError:
+                mobyle_grp_cfg = 'mobyle'
+            
+            try:
+                mobyle_uid = pwd.getpwnam(mobyle_user_cfg)[2]
+            except KeyError:
+                raise ConfigError("The mobyle user specified in configuration ({}) does not exist".format(mobyle_user_cfg))
+            try:
+                mobyle_gid = grp.getgrnam(mobyle_grp_cfg)[2]
+            except KeyError:
+                raise ConfigError("The mobyle group specified in configuration ({}) does not exist".format(mobyle_grp_cfg))
+            
+            os.setgid(mobyle_gid)
+            os.setuid(mobyle_uid)
+        else:
+            warnings.warn("running mobyle as {}.{}".format(pwd.getpwuid(launched_euid), 
+                                                           grp.getgrgid(os.getgid())
+                                                           ))
+    
     lock_file = cfg.get("mob2exec","pid_file") 
+    
     #####################
     #                   #
     # start the daemon  #
@@ -213,6 +251,11 @@ reload : to reload he configuration file without stopping the daemon (not implem
             sys.exit(1)
             
         pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
+        
+        #########################
+        # switch to mobyle user #
+        #########################
+        switch_id()
         master = Master(pid_file, cfg)
         ############################# DEBUG #################################
         log_file = cfg.get("mob2exec","log_file")
@@ -244,6 +287,10 @@ reload : to reload he configuration file without stopping the daemon (not implem
             pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
             pid = pid_file.read_pid()
             if pid:
+                #########################
+                # switch to mobyle user #
+                #########################
+                switch_id()
                 communicate(pid, signal.SIGTERM)
             else:
                 print("{0} is not running ".format(sys.argv[0]), file=sys.stderr)
@@ -261,6 +308,10 @@ reload : to reload he configuration file without stopping the daemon (not implem
             pid_file = lockfile.pidlockfile.PIDLockFile(lock_file)
             pid = pid_file.read_pid()
             if pid:
+                #########################
+                # switch to mobyle user #
+                #########################
+                switch_id()
                 communicate(pid, signal.signal.SIGHUP)
             else:
                 print("{0} is not running ".format(sys.argv[0]), file=sys.stderr)

@@ -68,8 +68,8 @@ class DockerContainer(object):
         cmd = '''uid={uid}
 gid={gid}
 {sudo} docker run --rm -w {job_dir} -v {job_dir}:{job_dir} {volumes}{env} {container_id} \ 
-bash -c "groupadd --gid {gid} {group_mobyle} && useradd --uid {uid} --gid {gid} {user_mobyle} \
-/bin/sh .{container_type}_job_script \
+bash -c "groupadd --gid {gid} {group_mobyle} && useradd --uid {uid} --gid {gid} {user_mobyle}; \
+/bin/sh .{container_type}_job_script; \
 chown -R {uid}:{gid} {job_dir}"'''.format(uid = os.getuid(),
                                           gid = os.getgid(),
                                           job_dir = job.dir,

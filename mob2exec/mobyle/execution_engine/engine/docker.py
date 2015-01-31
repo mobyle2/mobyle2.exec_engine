@@ -63,7 +63,7 @@ class DockerContainer(object):
         env = ''
         if self.env_vars:
             for key, value in self.env_vars.iteritems():
-                env = ' -e "{0}={1}"'.format(key, value)
+                env += ' -e "{0}={1}"'.format(key, value)
                 
         cmd = '''uid={uid}
 gid={gid}
